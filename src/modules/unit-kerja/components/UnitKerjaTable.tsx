@@ -76,9 +76,9 @@ export function UnitKerjaTable({
           <div className="flex flex-wrap gap-1">
             {unit.is_unor && <AppBadge variant="info">Unor</AppBadge>}
             {unit.is_satker && <AppBadge variant="success">Satker</AppBadge>}
-            {unit.is_subsatker && <AppBadge variant="warning" size="sm">SubSatker</AppBadge>}
+            {unit.is_subsatker && <AppBadge variant="warning">SubSatker</AppBadge>}
             {unit.is_sekretariat && (
-              <AppBadge variant="neutral" size="sm">
+              <AppBadge variant="neutral">
                 Sekretariat
               </AppBadge>
             )}
