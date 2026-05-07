@@ -9,35 +9,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy Frontend to VPS
+      - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
-
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.SSH_SCREET }}
-
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
           script: |
             echo "Start Frontend Deployment"
 
             cd ~/ams-frontend
 
-            echo "Pull latest code"
             git fetch origin
             git reset --hard origin/master
 
-            echo "Install dependencies"
             npm install
 
-            echo "Remove old build"
             rm -rf .next
 
-            echo "Build Next.js"
             npm run build
 
-            echo "Restart PM2"
             pm2 restart ams-frontend || pm2 start npm --name ams-frontend -- start
 
             pm2 save
 
-            echo "Frontend Deployment Success"
+            echo "Deployment Success"
