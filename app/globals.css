@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* FONT SYSTEM */
+    --font-sans: var(--font-inter);
+
+    /* Light Mode */
+    --background: 210 40% 98%; /* Sedikit off-white agar sidebar lebih menyatu */
+    --foreground: 222 47% 11%;
+
+    --primary: 24 98% 50%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 221 83% 53%;
+    --secondary-foreground: 210 40% 98%;
+
+    --success: 160 84% 39%;
+    --warning: 38 92% 50%;
+    --destructive: 0 84% 60%;
+
+    /* Sidebar / Card - Non-white (Soft Grey/Slate 100) */
+    --card: 210 40% 95%; 
+    --card-foreground: 222 47% 11%;
+
+    --popover: 210 40% 95%;
+    --popover-foreground: 222 47% 11%;
+
+    --muted: 210 40% 90%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 90%;
+    --accent-foreground: 222 47% 11%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 24 98% 50%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    /* Dark Mode */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+
+    --primary: 24 98% 50%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 221 83% 53%;
+    --secondary-foreground: 210 40% 98%;
+
+    --success: 160 84% 39%;
+    --warning: 38 92% 50%;
+    --destructive: 0 84% 60%;
+
+    /* Sidebar / Card - Near Black / Black Orange Vibe */
+    --card: 240 10% 4%; 
+    --card-foreground: 210 40% 98%;
+
+    --popover: 240 10% 4%;
+    --popover-foreground: 210 40% 98%;
+
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217 32% 17%;
+    --accent-foreground: 210 40% 98%;
+
+    --border: 240 5% 15%; /* Border lebih redup agar smooth */
+    --input: 240 5% 15%;
+    --ring: 24 98% 50%;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  * {
+    @apply border-border outline-ring/50;
+  }
+}
+
+@layer utilities {
+  /* Menyembunyikan scrollbar */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;  
+    scrollbar-width: none;  
+  }
+
+  /* Scrollbar Halus & Tipis  */
+  .scrollbar-smooth::-webkit-scrollbar {
+    width: 6px; 
+  }
+  .scrollbar-smooth::-webkit-scrollbar-track {
+    background: transparent; 
+  }
+  .scrollbar-smooth::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.3); 
+    border-radius: 10px; 
+  }
+  .scrollbar-smooth::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5); 
+  }
+  .scrollbar-smooth {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+}
