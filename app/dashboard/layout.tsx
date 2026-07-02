@@ -44,7 +44,7 @@ export default function DashboardLayout({
         {/* Optional: Dashboard Footer (Sesuai Desain System) */}
         <footer className="px-4 sm:px-8 py-6 border-t border-border bg-card/50 backdrop-blur-sm">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] sm:text-xs text-muted-foreground uppercase tracking-widest font-medium">
-            <p>© 2024 BPSDM PERTAHANAN - Asset Management System (AMS)</p>
+            <p>© 2024 BMN NEGARA - Asset Management System (AMS)</p>
             <div className="flex items-center gap-4">
               <span className="hover:text-foreground cursor-pointer transition-colors">Documentation</span>
               <span className="h-4 w-px bg-border hidden sm:block" />
