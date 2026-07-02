@@ -3,30 +3,10 @@
 import { useMutation } from '@apollo/client';
 import { CREATE_ASSET, UPDATE_ASSET, DELETE_ASSET } from '@/modules/asset/services/asset.mutation';
 import { parseApolloError, type ParsedError } from '@/lib/core/api/error-handler';
-
-/**
- * useCreateAsset Mutation Hook
- */
-
-export interface CreateAssetInput {
-  kodeBarang: string;
-  nomorRegister: string;
-  namaBarang: string;
-  merk?: string;
-  kategoriId: number;
-  nilaiPerolehan: number;
-  sumberDana: string;
-  tahunPerolehan: number;
-  klasifikasi: string;
-  kondisi: string;
-  statusPenggunaan: string;
-  lokasiId: number;
-  unitId: number;
-  penanggungJawabId: number;
-}
+import { CreateAssetInput, UpdateAssetInput, Asset } from '../types';
 
 export interface UseCreateAssetResult {
-  create: (input: CreateAssetInput) => Promise<any>;
+  create: (input: CreateAssetInput) => Promise<Asset>;
   loading: boolean;
   error: ParsedError | null;
 }
@@ -46,29 +26,8 @@ export function useCreateAsset(): UseCreateAssetResult {
   };
 }
 
-/**
- * useUpdateAsset Mutation Hook
- */
-
-export interface UpdateAssetInput {
-  kodeBarang?: string;
-  nomorRegister?: string;
-  namaBarang?: string;
-  merk?: string;
-  kategoriId?: number;
-  nilaiPerolehan?: number;
-  sumberDana?: string;
-  tahunPerolehan?: number;
-  klasifikasi?: string;
-  kondisi?: string;
-  statusPenggunaan?: string;
-  lokasiId?: number;
-  unitId?: number;
-  penanggungJawabId?: number;
-}
-
 export interface UseUpdateAssetResult {
-  update: (id: string, input: UpdateAssetInput) => Promise<any>;
+  update: (id: string, input: UpdateAssetInput) => Promise<Asset>;
   loading: boolean;
   error: ParsedError | null;
 }
@@ -88,12 +47,8 @@ export function useUpdateAsset(): UseUpdateAssetResult {
   };
 }
 
-/**
- * useDeleteAsset Mutation Hook
- */
-
 export interface UseDeleteAssetResult {
-  delete: (id: string) => Promise<any>;
+  deleteAsset: (id: string) => Promise<boolean>;
   loading: boolean;
   error: ParsedError | null;
 }
@@ -104,7 +59,7 @@ export function useDeleteAsset(): UseDeleteAssetResult {
   const parsedError = error ? parseApolloError(error) : null;
 
   return {
-    delete: async (id: string) => {
+    deleteAsset: async (id: string) => {
       const result = await mutate({ variables: { id } });
       return result.data?.deleteAsset;
     },

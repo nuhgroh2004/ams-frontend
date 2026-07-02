@@ -1,34 +1,51 @@
-/**
- * GraphQL Queries - Asset Module
- */
-
 import { gql } from '@apollo/client';
 
 export const GET_ASSETS = gql`
-  query GetAssets($page: Int!, $pageSize: Int!, $search: String, $sortBy: String, $sortOrder: String) {
-    assets(page: $page, pageSize: $pageSize, search: $search, sortBy: $sortBy, sortOrder: $sortOrder) {
-      items {
+  query GetAssets($filter: AssetFilterInput, $page: Int, $limit: Int) {
+    assets(filter: $filter, page: $page, limit: $limit) {
+      data {
         id
-        kodeBarang
-        nomorRegister
-        namaBarang
-        merk
-        kategoriId
-        nilaiPerolehan
-        sumberDana
-        tahunPerolehan
+        kode_barang
+        nomor_register
+        nama_barang
+        kategori_id
+        nilai_perolehan
+        sumber_dana
+        tahun_perolehan
         klasifikasi
         kondisi
-        statusPenggunaan
-        lokasiId
-        unitId
-        penanggungJawabId
-        createdAt
-        updatedAt
+        status_penggunaan
+        lokasi_id
+        unit_id
+        penanggung_jawab_id
+        qr_code_path
+        gambar_path
+        kategori {
+          id
+          kode_kategori
+          nama_kategori
+        }
+        lokasi {
+          id
+          nama_gedung
+          lantai
+          ruangan
+        }
+        unit {
+          id
+          nama_unit
+          kode_unit
+        }
+        penanggungJawab {
+          id
+          nama_lengkap
+        }
+        created_at
+        updated_at
       }
       total
       page
-      pageSize
+      limit
       totalPages
     }
   }
@@ -38,24 +55,43 @@ export const GET_ASSET_BY_ID = gql`
   query GetAssetById($id: ID!) {
     asset(id: $id) {
       id
-      kodeBarang
-      nomorRegister
-      namaBarang
-      merk
-      kategoriId
-      nilaiPerolehan
-      sumberDana
-      tahunPerolehan
+      kode_barang
+      nomor_register
+      nama_barang
+      kategori_id
+      nilai_perolehan
+      sumber_dana
+      tahun_perolehan
       klasifikasi
       kondisi
-      statusPenggunaan
-      lokasiId
-      unitId
-      penanggungJawabId
-      qrCodePath
-      gambarPath
-      createdAt
-      updatedAt
+      status_penggunaan
+      lokasi_id
+      unit_id
+      penanggung_jawab_id
+      qr_code_path
+      gambar_path
+      kategori {
+        id
+        kode_kategori
+        nama_kategori
+      }
+      lokasi {
+        id
+        nama_gedung
+        lantai
+        ruangan
+      }
+      unit {
+        id
+        nama_unit
+        kode_unit
+      }
+      penanggungJawab {
+        id
+        nama_lengkap
+      }
+      created_at
+      updated_at
     }
   }
 `;
@@ -64,8 +100,8 @@ export const GET_ASSET_CATEGORIES = gql`
   query GetAssetCategories {
     assetCategories {
       id
-      kodeKategori
-      namaKategori
+      kode_kategori
+      nama_kategori
     }
   }
 `;

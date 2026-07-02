@@ -190,7 +190,7 @@ export function Sidebar() {
               </div>
               <div>
                 <h1 className="text-sm font-bold text-foreground leading-tight">
-                  BMN Assets Management System
+                  BMN AMS
                 </h1>
                 <p className="text-[10px] font-medium text-muted-foreground tracking-widest uppercase">
                   Aset Management

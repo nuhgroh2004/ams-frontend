@@ -6,8 +6,8 @@ export interface Location {
   kode_lokasi: string;
   unit_id: string | null;
   unit?: {
-    kode: string;
-    name: string;
+    kode_unit: string;
+    nama_unit: string;
   } | null;
 }
 

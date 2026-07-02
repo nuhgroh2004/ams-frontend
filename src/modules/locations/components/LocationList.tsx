@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { AppButton } from '@/components/primitives/AppButton';
 import { AppModal } from '@/components/primitives/AppModal';
+import { AppButton } from '@/components/primitives/AppButton';
 import { LocationTable } from './LocationTable';
 import { LocationFormModal } from './LocationFormModal';
 import { useLocations, useCreateLocation, useUpdateLocation, useDeleteLocation } from '../hooks/useLocations';
 import { locationMapper } from '../mappers/location.mapper';
 import { Location, LocationFormValues } from '../types';
+import { PageShell } from '@/components/patterns';
 
 export const LocationList = () => {
   const [page, setPage] = useState(1);
@@ -34,8 +35,9 @@ export const LocationList = () => {
   };
 
   const confirmDelete = async () => {
-    if (deletingLocationId) {
-      await deleteLocation(deletingLocationId);
+    if (!deletingLocationId) return;
+    const success = await deleteLocation(deletingLocationId);
+    if (success) {
       setDeletingLocationId(null);
       refetch();
     }
@@ -43,9 +45,11 @@ export const LocationList = () => {
 
   const handleFormSubmit = async (values: LocationFormValues) => {
     if (editingLocation) {
-      await updateLocation(editingLocation.id, locationMapper.toUpdateInput(values));
+      const input = locationMapper.toUpdateInput(values);
+      await updateLocation(editingLocation.id, input);
     } else {
-      await createLocation(locationMapper.toCreateInput(values));
+      const input = locationMapper.toCreateInput(values);
+      await createLocation(input);
     }
     setIsModalOpen(false);
     refetch();
@@ -62,53 +66,49 @@ export const LocationList = () => {
     : undefined;
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Locations</h1>
-        <AppButton onClick={handleCreate}>Add Location</AppButton>
-      </div>
+      <div className="space-y-6">
+        <LocationTable
+          data={locations}
+          loading={listLoading}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onAdd={handleCreate}
+        />
 
-      <LocationTable
-        data={locations}
-        loading={listLoading}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+        <LocationFormModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSubmit={handleFormSubmit}
+          initialValues={initialValues}
+          loading={createLoading || updateLoading}
+          title={editingLocation ? 'Edit Lokasi' : 'Tambah Lokasi'}
+        />
 
-      <LocationFormModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleFormSubmit}
-        initialValues={initialValues}
-        loading={createLoading || updateLoading}
-        title={editingLocation ? 'Edit Location' : 'Create Location'}
-      />
-
-      <AppModal
-        isOpen={!!deletingLocationId}
-        onClose={() => setDeletingLocationId(null)}
-        title="Delete Location"
-        size="sm"
-      >
-        <div className="space-y-4">
-          <p>Are you sure you want to delete this location?</p>
-          <div className="flex justify-end space-x-2">
-            <AppButton
-              variant="outline"
-              onClick={() => setDeletingLocationId(null)}
-            >
-              Cancel
-            </AppButton>
-            <AppButton
-              variant="danger"
-              onClick={confirmDelete}
-              loading={deleteLoading}
-            >
-              Delete
-            </AppButton>
+        <AppModal
+          isOpen={!!deletingLocationId}
+          onClose={() => setDeletingLocationId(null)}
+          title="Hapus Lokasi"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <p className="text-sm">Apakah Anda yakin ingin menghapus lokasi ini?</p>
+            <div className="flex justify-end gap-2 pt-2">
+              <AppButton
+                variant="outline"
+                onClick={() => setDeletingLocationId(null)}
+              >
+                Batal
+              </AppButton>
+              <AppButton
+                variant="danger"
+                onClick={confirmDelete}
+                loading={deleteLoading}
+              >
+                Hapus
+              </AppButton>
+            </div>
           </div>
-        </div>
-      </AppModal>
-    </div>
+        </AppModal>
+      </div>
   );
 };

@@ -4,11 +4,12 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  getFilteredRowModel,
   ColumnDef,
   flexRender,
 } from '@tanstack/react-table';
-import { AppButton } from '@/components/primitives/AppButton';
-import { AppInput } from '@/components/primitives/AppInput';
+import { Pencil, Trash2, ChevronLeft, ChevronRight, Loader2, Search, Plus } from 'lucide-react';
+import { AppCard, AppButton, AppInput } from '@/components/primitives';
 import { Location } from '../types';
 
 interface LocationTableProps {
@@ -16,16 +17,17 @@ interface LocationTableProps {
   loading?: boolean;
   onEdit?: (location: Location) => void;
   onDelete?: (id: string) => void;
+  onAdd?: () => void;
 }
 
-export const LocationTable = ({ data, loading, onEdit, onDelete }: LocationTableProps) => {
+export const LocationTable = ({ data, loading, onEdit, onDelete, onAdd }: LocationTableProps) => {
   const [globalFilter, setGlobalFilter] = useState('');
 
-  const columns: ColumnDef<Location>[] = [
+  const columns: ColumnDef<Location, any>[] = [
     {
       accessorKey: 'nama_gedung',
       header: 'Nama Gedung',
-      cell: ({ getValue }) => getValue() || '-',
+      cell: ({ getValue }) => <span className="font-bold text-foreground">{getValue() || '-'}</span>,
     },
     {
       accessorKey: 'lantai',
@@ -40,34 +42,40 @@ export const LocationTable = ({ data, loading, onEdit, onDelete }: LocationTable
     {
       accessorKey: 'kode_lokasi',
       header: 'Kode Lokasi',
-      cell: ({ getValue }) => getValue() || '-',
+      cell: ({ getValue }) => (
+        <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
+          {getValue() || '-'}
+        </span>
+      ),
     },
     {
-      accessorKey: 'unit.name',
+      accessorKey: 'unit.nama_unit',
       header: 'Unit Kerja',
       cell: ({ getValue }) => getValue() || '-',
     },
     {
       id: 'actions',
-      header: 'Aksi',
+      header: () => <div className="text-right">Aksi</div>,
       cell: ({ row }) => (
-        <div className="flex space-x-2">
+        <div className="flex items-center justify-end gap-1">
           {onEdit && (
             <AppButton
-              size="sm"
-              variant="outline"
+              size="icon_sm"
+              variant="ghost"
+              className="text-muted-foreground hover:text-foreground"
               onClick={() => onEdit(row.original)}
             >
-              Edit
+              <Pencil className="h-4 w-4" />
             </AppButton>
           )}
           {onDelete && (
             <AppButton
-              size="sm"
-              variant="danger"
+              size="icon_sm"
+              variant="ghost"
+              className="text-muted-foreground hover:text-destructive"
               onClick={() => onDelete(row.original.id)}
             >
-              Delete
+              <Trash2 className="h-4 w-4" />
             </AppButton>
           )}
         </div>
@@ -81,6 +89,7 @@ export const LocationTable = ({ data, loading, onEdit, onDelete }: LocationTable
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     globalFilterFn: 'includesString',
     state: {
       globalFilter,
@@ -88,76 +97,111 @@ export const LocationTable = ({ data, loading, onEdit, onDelete }: LocationTable
     onGlobalFilterChange: setGlobalFilter,
   });
 
-  if (loading) {
-    return <div className="text-center py-4">Loading...</div>;
+  if (loading && data.length === 0) {
+    return (
+      <AppCard className="p-12 flex flex-col items-center justify-center gap-4 border-border bg-card">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground font-medium">Memuat data lokasi...</p>
+      </AppCard>
+    );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <AppInput
-          placeholder="Search locations..."
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
-        />
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse border border-gray-200">
-          <thead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="bg-gray-50">
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="border border-gray-200 px-4 py-2 text-left font-medium"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="hover:bg-gray-50">
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="border border-gray-200 px-4 py-2">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <AppButton
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </AppButton>
-          <AppButton
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </AppButton>
+    <div className={loading ? 'opacity-50 pointer-events-none transition-opacity space-y-4' : 'transition-opacity space-y-4'}>
+      {/* Notion-style Filter bar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between bg-card p-3 rounded-xl border border-border">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-2.5 h-4.5 w-4.5 text-muted-foreground" />
+          <AppInput
+            placeholder="Cari lokasi berdasarkan ruangan, kode, gedung..."
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="pl-9 w-full bg-input border-border focus:border-primary focus:ring-primary h-9 rounded-lg text-sm"
+          />
         </div>
-        <span className="text-sm text-gray-700">
-          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-        </span>
+        {onAdd && (
+          <AppButton onClick={onAdd} variant="primary" icon={Plus}>
+            Tambah Lokasi
+          </AppButton>
+        )}
       </div>
+
+      <AppCard className="overflow-hidden mt-5 border-border bg-card">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-muted/50">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {table.getAllLeafColumns().map((column) => {
+                    const header = headerGroup.headers.find(h => h.column.id === column.id);
+                    if (!header) return null;
+                    return (
+                      <th
+                        key={column.id}
+                        className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.header, header.getContext())}
+                      </th>
+                    );
+                  })}
+                </tr>
+              ))}
+            </thead>
+            <tbody className="divide-y divide-border">
+              {table.getRowModel().rows.map((row) => (
+                <tr key={row.id} className="hover:bg-muted/30 transition-colors">
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="px-6 py-4 text-sm text-foreground">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              {table.getRowModel().rows.length === 0 && (
+                <tr>
+                  <td colSpan={columns.length} className="text-center py-12 text-sm text-muted-foreground">
+                    Tidak ada data lokasi ditemukan.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-card">
+          <div className="text-xs text-muted-foreground">
+            Menampilkan halaman{' '}
+            <span className="font-semibold text-foreground">
+              {table.getState().pagination.pageIndex + 1}
+            </span>{' '}
+            dari{' '}
+            <span className="font-semibold text-foreground">
+              {table.getPageCount()}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <AppButton
+              variant="outline"
+              size="icon_sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </AppButton>
+            <AppButton
+              variant="outline"
+              size="icon_sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </AppButton>
+          </div>
+        </div>
+      </AppCard>
     </div>
   );
 };

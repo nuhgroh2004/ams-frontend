@@ -1,22 +1,151 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { Plus, Search } from 'lucide-react'
 import { PageShell } from '@/components/patterns'
-import { AppCard, AppCardContent } from '@/components/primitives'
-import { AlertCircle } from 'lucide-react'
+import { AppButton, AppInput } from '@/components/primitives'
+import { ProcurementTable } from './ProcurementTable'
+import { ProcurementFormModal } from './modals/ProcurementFormModal'
+import { ProcurementDetailModal } from './modals/ProcurementDetailModal'
+import { ConfirmActionModal } from '@/modules/users/components/modals/ConfirmActionModal'
+import { useProcurements, useDeleteProcurement } from '../hooks/useProcurement'
+import { toast } from '@/lib/toast'
+import { Procurement } from '../types'
 
 export function ProcurementModule() {
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const limit = 10
+
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
+  const [selectedProcurement, setSelectedProcurement] = useState<Procurement | null>(null)
+
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [procurementToDeleteId, setProcurementToDeleteId] = useState<string | null>(null)
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+      setPage(1)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [search])
+
+  const { procurements, loading, total, totalPages, refetch } = useProcurements({
+    page,
+    limit,
+    search: debouncedSearch
+  })
+
+  const { deleteProcurement, loading: isDeleting } = useDeleteProcurement()
+
+  const handleAdd = () => {
+    setIsFormOpen(true)
+  }
+
+  const handleViewDetails = (procurement: Procurement) => {
+    setSelectedProcurement(procurement)
+    setIsDetailOpen(true)
+  }
+
+  const handleDeleteTrigger = (id: string) => {
+    setProcurementToDeleteId(id)
+    setIsConfirmOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!procurementToDeleteId) return
+    try {
+      const success = await deleteProcurement(procurementToDeleteId)
+      if (success) {
+        toast.success('Transaksi pengadaan berhasil dihapus')
+        refetch()
+      } else {
+        toast.error('Gagal menghapus transaksi pengadaan')
+      }
+      setIsConfirmOpen(false)
+    } catch (err: any) {
+      toast.error('Gagal menghapus pengadaan', err.message)
+    }
+  }
+
   return (
     <PageShell 
-      title="Pengadaan Aset" 
-      description="Monitor proses pengadaan, purchase order, dan vendor."
+      title="Pengadaan Aset (Procurement)" 
+      description="Monitor dan catat riwayat pengadaan aset BMN, spk kontrak vendor, beserta rincian item logistik."
     >
-      <AppCard variant="alert">
-        <AppCardContent className="flex items-center gap-3 pt-5">
-          <AlertCircle className="h-5 w-5 text-warning" />
-          <p className="text-sm font-medium">Module under development</p>
-        </AppCardContent>
-      </AppCard>
+      <ProcurementFormModal 
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSuccess={() => refetch()}
+      />
+
+      <ProcurementDetailModal 
+        isOpen={isDetailOpen}
+        onClose={() => {
+          setIsDetailOpen(false)
+          setSelectedProcurement(null)
+        }}
+        procurement={selectedProcurement}
+      />
+
+      <ConfirmActionModal 
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        title="Hapus Transaksi Pengadaan"
+        description="Apakah Anda yakin ingin menghapus catatan pengadaan ini? Semua data item terkait di dalamnya juga akan terhapus."
+        type="danger"
+        confirmText="Hapus"
+        onConfirm={handleDeleteConfirm}
+        isLoading={isDeleting}
+      />
+
+      {/* Filter and Action Bar */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-card p-4 rounded-2xl border border-border">
+        {/* Search */}
+        <div className="md:col-span-9 lg:col-span-9">
+          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1 mb-1.5 block">
+            Pencarian
+          </label>
+          <AppInput 
+            placeholder="Cari nomor pengadaan atau vendor..."
+            icon={Search}
+            className="bg-background/50"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        {/* Add Button */}
+        <div className="md:col-span-3 lg:col-span-3">
+          <AppButton 
+            fullWidth 
+            icon={Plus} 
+            variant="primary"
+            onClick={handleAdd}
+          >
+            Catat Pengadaan
+          </AppButton>
+        </div>
+      </div>
+
+      {/* Procurement Table */}
+      <ProcurementTable 
+        procurements={procurements}
+        loading={loading}
+        pagination={{
+          total,
+          page,
+          limit,
+          totalPages
+        }}
+        onPageChange={setPage}
+        onViewDetails={handleViewDetails}
+        onDelete={handleDeleteTrigger}
+      />
     </PageShell>
   )
 }

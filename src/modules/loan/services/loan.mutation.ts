@@ -1,48 +1,89 @@
 /**
  * GraphQL Mutations - Loan Module
+ * Single Source of Truth: peminjaman.json
  */
 
 import { gql } from '@apollo/client';
 
-export const CREATE_LOAN = gql`
-  mutation CreateLoan($input: CreateLoanInput!) {
-    createLoan(input: $input) {
+export const AJUKAN_PEMINJAMAN = gql`
+  mutation AjukanPeminjaman($input: AjukanPeminjamanInput!) {
+    ajukanPeminjaman(input: $input) {
       id
-      assetId
-      peminjamId
-      tanggalPinjam
-      tanggalRencanKembali
+      asset_id
+      peminjam_id
+      approver_id
+      tanggal_pinjam
+      tanggal_rencana_kembali
+      tanggal_kembali
+      foto_sebelum
+      foto_sesudah
+      catatan_pengaju
+      catatan_approver
       status
-      createdAt
+      created_at
+      updated_at
+      asset {
+        id
+        kode_barang
+        nomor_register
+        nama_barang
+      }
     }
   }
 `;
 
-export const APPROVE_LOAN = gql`
-  mutation ApproveLoan($id: ID!, $comment: String) {
-    approveLoan(id: $id, comment: $comment) {
+export const SETUJUI_PEMINJAMAN = gql`
+  mutation SetujuiPeminjaman($id: ID!, $catatan: String) {
+    setujuiPeminjaman(id: $id, catatan: $catatan) {
       id
       status
-      workflowInstanceId
+      catatan_approver
+      updated_at
     }
   }
 `;
 
-export const REJECT_LOAN = gql`
-  mutation RejectLoan($id: ID!, $reason: String!) {
-    rejectLoan(id: $id, reason: $reason) {
+export const TOLAK_PEMINJAMAN = gql`
+  mutation TolakPeminjaman($id: ID!, $catatan: String) {
+    tolakPeminjaman(id: $id, catatan: $catatan) {
       id
       status
+      catatan_approver
+      updated_at
     }
   }
 `;
 
-export const RETURN_LOAN = gql`
-  mutation ReturnLoan($id: ID!, $notes: String) {
-    returnLoan(id: $id, notes: $notes) {
+export const MULAI_PEMINJAMAN = gql`
+  mutation MulaiPeminjaman($id: ID!, $fotoSebelum: String) {
+    mulaiPeminjaman(id: $id, fotoSebelum: $fotoSebelum) {
       id
-      tanggalKembali
       status
+      tanggal_pinjam
+      foto_sebelum
+      updated_at
+    }
+  }
+`;
+
+export const KEMBALIKAN_ASET = gql`
+  mutation KembalikanAset($id: ID!, $fotoSesudah: String) {
+    kembalikanAset(id: $id, fotoSesudah: $fotoSesudah) {
+      id
+      status
+      tanggal_kembali
+      foto_sesudah
+      updated_at
+    }
+  }
+`;
+
+export const BATALKAN_PEMINJAMAN = gql`
+  mutation BatalkanPeminjaman($id: ID!) {
+    batalkanPeminjaman(id: $id) {
+      id
+      status
+      updated_at
     }
   }
 `;

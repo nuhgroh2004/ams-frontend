@@ -4,7 +4,6 @@ import React from 'react'
 import { cn } from '@/lib/utils/cn'
 import { 
   Pencil, 
-  Power, 
   Trash2, 
   ChevronLeft, 
   ChevronRight,
@@ -15,21 +14,7 @@ import {
   AppBadge, 
   AppButton,
 } from '@/components/primitives'
-
-interface User {
-  id: string
-  nama_lengkap: string
-  email: string
-  nrp: string
-  jabatan: string
-  is_active: boolean
-  unit?: {
-    nama_unit: string
-  }
-  roles?: {
-    nama_role: string
-  }[]
-}
+import { Asset } from '../types'
 
 interface PaginationInfo {
   total: number
@@ -38,32 +23,42 @@ interface PaginationInfo {
   totalPages: number
 }
 
-interface UsersTableProps {
-  users: User[]
+interface AssetTableProps {
+  assets: Asset[]
   loading?: boolean
   pagination?: PaginationInfo
   onPageChange?: (page: number) => void
   onDelete?: (id: string) => void
-  onToggleStatus?: (id: string, currentStatus: boolean) => void
-  onEdit?: (user: User) => void
+  onEdit?: (asset: Asset) => void
 }
 
-export function UsersTable({
-  users,
+export function AssetTable({
+  assets,
   loading,
   pagination,
   onPageChange,
   onDelete,
-  onToggleStatus,
   onEdit
-}: UsersTableProps) {
-  if (loading && users.length === 0) {
+}: AssetTableProps) {
+  if (loading && assets.length === 0) {
     return (
       <AppCard className="p-12 flex flex-col items-center justify-center gap-4 border-border bg-card">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground font-medium">Memuat data pengguna...</p>
+        <p className="text-sm text-muted-foreground font-medium">Memuat data aset...</p>
       </AppCard>
     )
+  }
+
+  // Helper to format currency
+  const formatRupiah = (value?: string | null) => {
+    if (!value) return '-'
+    const num = parseFloat(value)
+    if (isNaN(num)) return '-'
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0
+    }).format(num)
   }
 
   return (
@@ -74,16 +69,16 @@ export function UsersTable({
             <thead className="bg-muted/50">
               <tr>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Pengguna
+                  Nama & Kode Barang
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  NRP & Jabatan
+                  Detail Perolehan
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Unit Kerja
+                  Unit & Lokasi
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Role
+                  Kondisi
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Status
@@ -94,25 +89,36 @@ export function UsersTable({
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {users.length === 0 ? (
+              {assets.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
-                    Tidak ada data pengguna ditemukan.
+                    Tidak ada data aset ditemukan.
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
+                assets.map((asset) => (
                   <tr 
-                    key={user.id} 
+                    key={asset.id} 
                     className="hover:bg-muted/30 transition-colors group"
                   >
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="text-sm font-bold text-foreground">
-                          {user.nama_lengkap}
+                          {asset.nama_barang}
+                        </span>
+                        <span className="text-xs text-muted-foreground font-mono">
+                          {asset.kode_barang || '-'} {asset.nomor_register ? `(${asset.nomor_register})` : ''}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-foreground">
+                          {formatRupiah(asset.nilai_perolehan)}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {user.email}
+                          Tahun {asset.tahun_perolehan || '-'} | {asset.sumber_dana || 'Sumber Dana -'}
                         </span>
                       </div>
                     </td>
@@ -120,32 +126,63 @@ export function UsersTable({
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="text-sm text-foreground">
-                          {user.nrp}
+                          {asset.unit?.nama_unit || '-'}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {user.jabatan}
+                          {asset.lokasi
+                            ? [asset.lokasi.nama_gedung, asset.lokasi.lantai, asset.lokasi.ruangan]
+                                .filter(Boolean)
+                                .join(' - ')
+                            : '-'}
                         </span>
                       </div>
                     </td>
 
                     <td className="px-6 py-4">
-                      <span className="text-sm text-foreground">
-                        {user.unit?.nama_unit || '-'}
-                      </span>
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <AppBadge variant="neutral" badgeStyle="outline">
-                        {user.roles?.[0]?.nama_role || 'User'}
+                      <AppBadge 
+                        variant={
+                          asset.kondisi === 'baik' 
+                            ? 'success' 
+                            : asset.kondisi === 'rusak_ringan' 
+                            ? 'warning' 
+                            : 'danger'
+                        } 
+                        badgeStyle="outline"
+                      >
+                        {asset.kondisi === 'baik' 
+                          ? 'Baik' 
+                          : asset.kondisi === 'rusak_ringan' 
+                          ? 'Rusak Ringan' 
+                          : asset.kondisi === 'rusak_berat'
+                          ? 'Rusak Berat'
+                          : '-'}
                       </AppBadge>
                     </td>
 
                     <td className="px-6 py-4">
                       <AppBadge 
-                        variant={user.is_active ? 'success' : 'danger'} 
+                        variant={
+                          asset.status_penggunaan === 'aktif' 
+                            ? 'success' 
+                            : asset.status_penggunaan === 'dipinjam' 
+                            ? 'info' 
+                            : asset.status_penggunaan === 'maintenance'
+                            ? 'warning'
+                            : 'danger'
+                        } 
                         badgeStyle="dot"
                       >
-                        {user.is_active ? 'Aktif' : 'Nonaktif'}
+                        {asset.status_penggunaan === 'aktif' 
+                          ? 'Aktif' 
+                          : asset.status_penggunaan === 'dipinjam' 
+                          ? 'Dipinjam'
+                          : asset.status_penggunaan === 'maintenance'
+                          ? 'Perawatan'
+                          : asset.status_penggunaan === 'dihapus'
+                          ? 'Dihapus'
+                          : asset.status_penggunaan === 'hilang'
+                          ? 'Hilang'
+                          : '-'}
                       </AppBadge>
                     </td>
 
@@ -155,28 +192,15 @@ export function UsersTable({
                           size="icon_sm" 
                           variant="ghost" 
                           className="text-muted-foreground hover:text-foreground"
-                          onClick={() => onEdit?.(user)}
+                          onClick={() => onEdit?.(asset)}
                         >
                           <Pencil className="h-4 w-4" />
                         </AppButton>
                         <AppButton 
                           size="icon_sm" 
                           variant="ghost" 
-                          className={cn(
-                            "transition-colors",
-                            user.is_active 
-                              ? "text-success/70 hover:text-success" 
-                              : "text-muted-foreground hover:text-foreground"
-                          )}
-                          onClick={() => onToggleStatus?.(user.id, user.is_active)}
-                        >
-                          <Power className="h-4 w-4" />
-                        </AppButton>
-                        <AppButton 
-                          size="icon_sm" 
-                          variant="ghost" 
                           className="text-muted-foreground hover:text-destructive"
-                          onClick={() => onDelete?.(user.id)}
+                          onClick={() => onDelete?.(asset.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </AppButton>
@@ -192,11 +216,11 @@ export function UsersTable({
 
       {/* Pagination Container */}
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 mt-4">
           <p className="text-sm text-muted-foreground">
             Menampilkan <span className="font-medium text-foreground">
               {((pagination.page - 1) * pagination.limit) + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)}
-            </span> dari <span className="font-medium text-foreground">{pagination.total}</span> pengguna
+            </span> dari <span className="font-medium text-foreground">{pagination.total}</span> aset
           </p>
           <div className="flex items-center gap-2">
             <AppButton 

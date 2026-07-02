@@ -1,119 +1,98 @@
-# Asset Management System (AMS) Frontend
+# Asset Management System (AMS) Frontend — BPSDM Kemhan RI
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.2.4-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2.4-blue?style=flat-square&logo=react)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.4.3-38bdf8?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
-A modern, highly responsive, and feature-rich frontend application for the **Asset Management System (AMS)**. Built using **Next.js 16**, **React 19**, **GraphQL (Apollo Client)**, **Zustand**, and styled with **Tailwind CSS** and **shadcn/ui**.
-
----
-
-## 🚀 Key Features
-
-The frontend is structured into modular domains located in the `src/modules` directory, covering all aspects of organization asset management:
-
-*   **🔐 Authentication & Users:** Complete signup, login (`/login`, `/register`), and role-based permissions management.
-*   **📊 Interactive Dashboard:** Analytics, metrics, and interactive charts powered by **Recharts**.
-*   **📦 Asset & Inventory Management:** Tracking assets, their metadata, location, and storage details.
-*   **🏢 Unit Kerja & Locations:** Structural unit management and location specifications (buildings, floors, rooms).
-*   **🔄 Asset Lifecycle Workflows:**
-    *   **Procurement:** Acquiring new assets.
-    *   **Transfer:** Moving assets across units/locations.
-    *   **Loan:** Loaning assets to personnel.
-    *   **Maintenance:** Scheduling and tracking repairs.
-    *   **Loss & Disposal:** Reporting lost or retired assets.
-*   **📜 Audit Logs:** System-wide activity logs for compliance and accountability.
-*   **⚙️ Settings:** Profile, system, and workflow customizations.
+Aplikasi antarmuka (frontend) modern untuk **Sistem Informasi Manajemen Aset BMN BPSDM Kementerian Pertahanan RI**. Dibangun menggunakan **Next.js 16 (App Router)**, **React 19**, **Apollo Client (GraphQL)**, **Zustand**, dan ditata menggunakan **Tailwind CSS** dengan standar estetika premium ala SaaS Notion.
 
 ---
 
-## 🛠️ Technology Stack
+## 🚀 Fitur Utama & Modul Domian
 
-*   **Core:** [Next.js](https://nextjs.org/) (App Router, Version 16) & [React](https://react.dev/) (Version 19)
-*   **State Management:** [Zustand](https://github.com/pmndrs/zustand) for client-side state
-*   **API Client:** [Apollo Client](https://www.apollographql.com/docs/react/) & [GraphQL](https://graphql.org/) (with web sockets support via `graphql-ws`)
-*   **Styling & UI:**
-    *   [Tailwind CSS](https://tailwindcss.com/) for layout and utility styling
-    *   [shadcn/ui](https://ui.shadcn.com/) + [Radix UI](https://www.radix-ui.com/) for accessible, premium-looking components
-    *   [Lucide React](https://lucide.dev/) for modern iconography
-*   **Forms & Validation:** [React Hook Form](https://react-hook-form.com/) & [Zod](https://zod.dev/)
-*   **Date Utilities:** [Day.js](https://day.js.org/)
-*   **Charts:** [Recharts](https://recharts.org/)
+Kode sumber ditata secara modular pada direktori `src/modules`:
+
+* **🔐 Autentikasi & Akun (`src/modules/auth`)**:
+  - Halaman login & register terintegrasi token JWT.
+  - Pengalihan otomatis berbasis status sesi dan otorisasi.
+* **📊 Dashboard Utama (`src/modules/dashboard`)**:
+  - **Management Console View** (untuk Admin, Operator BMN, Kepala Unit): Menampilkan ringkasan total aset, status peminjaman aktif, pengingat jadwal perawatan, visual grafik kondisi fisik aset (progress bar), klasifikasi BMN, serta tabel monitoring status aset di tiap unit kerja.
+  - **General User Welcome Hub** (untuk User Umum): Tampilan portal personal dengan panduan cepat peminjaman BMN serta tautan jalan pintas aksi pengajuan.
+* **🏢 Manajemen Lokasi & Unit Kerja (`src/modules/locations` & `src/modules/unit-kerja`)**:
+  - Manajemen master data gedung, lantai, ruangan, kode lokasi, dan unit kerja.
+  - Dilengkapi search input instan Notion-style.
+* **🔄 Assignment / Penyerahan Aset (`src/modules/transfer`)**:
+  - Penugasan aset BMN jangka panjang kepada personel (`User`) maupun unit kerja (`Unit`).
+  - Pencatatan pengembalian (return) aset penugasan.
+* **🚚 Mutasi Aset (`src/modules/transfer`)**:
+  - Pengajuan usulan perpindahan ruangan, unit kerja, atau penanggung jawab aset.
+  - Fitur persetujuan/penolakan dengan catatan kelayakan.
+  - Pembuatan Berita Acara Serah Terima (BAST) otomatis berbasis PDF, serta upload berkas BAST final bertanda tangan.
+* **🤝 Peminjaman BMN (`src/modules/loan`)**:
+  - Alur permohonan peminjaman aset jangka pendek beserta integrasi unggah bukti foto serah terima.
 
 ---
 
-## 📁 Project Structure
+## 🎨 Desain & UI/UX Standards (Notion-Style)
+
+* **Sleek Modals**: Pop-up dialog (`AppModal`) menggunakan overlay blur minimal (`backdrop-blur-[2px]`), border tipis elegan, dan transisi halus. Pada tampilan mobile, modal otomatis bertransformasi menjadi *bottom drawer* yang mudah dijangkau jempol.
+* **Form Grid**: Layout form input (seperti form lokasi) diatur dalam grid 2-kolom responsif untuk memudahkan pengisian data.
+* **Unified Action Bars**: Tombol aksi utama (seperti *Tambah Lokasi*) disatukan secara terpadu di dalam bar filter tabel guna mempertahankan kebersihan antarmuka.
+
+---
+
+## 🛠️ Tech Stack
+
+* **Core Framework:** Next.js 16 (Turbopack Enabled) & React 19
+* **State Management:** Zustand (Client Session)
+* **GraphQL Client:** Apollo Client (HTTP Link & WebSocket Link untuk Real-Time Sync)
+* **Styling & Components:** Tailwind CSS, Radix UI Primitives, Lucide Icons, shadcn/ui
+* **Form handling:** React Hook Form & Zod Validation
+* **Charts:** Recharts
+
+---
+
+## 📁 Struktur Direktori Frontend
 
 ```text
-├── app/                  # Next.js App Router (pages, layout, providers)
-├── public/               # Static assets (images, fonts, icons)
+ams-frontend/
+├── app/                  # Next.js App Router (layout, providers, routing)
+├── public/               # File static (logo, default profile images)
 ├── src/                  
-│   ├── components/       # Shared UI components (shadcn buttons, tables, inputs, etc.)
-│   ├── design-system/    # System-wide design tokens & global themes
-│   ├── lib/              # Utility libraries (apollo-client, store setup, helpers)
-│   ├── modules/          # Domain-specific modules (auth, asset, loan, etc.)
-│   │   ├── asset/        # Asset module components, hooks, types
-│   │   ├── auth/         # Auth screens, context, validators
-│   │   └── ...           # Other modules (disposal, maintenance, reports...)
-│   └── types/            # TypeScript type definitions
-├── tailwind.config.ts    # Tailwind CSS configuration
-├── tsconfig.json         # TypeScript configuration
-└── next.config.ts        # Next.js configuration
+│   ├── components/       # Primitives (Button, Modal, Input) & shared patterns
+│   ├── lib/              # Konfigurasi Apollo client, global handler, helper
+│   ├── modules/          # Bisnis modul domain (auth, asset, transfer, loan)
+│   │   ├── transfer/     # Komponen assignment & mutasi aset
+│   │   ├── dashboard/    # Halaman overview & statistika
+│   │   └── ...
+│   └── types/            # TypeScript type global
 ```
 
 ---
 
-## ⚙️ Getting Started
+## ⚙️ Cara Menjalankan Project
 
-### 📋 Prerequisites
+### 1. Konfigurasi Environment
+Salin berkas `.env.example` menjadi `.env` di folder root:
+```bash
+cp .env.example .env
+```
+Isi alamat API GraphQL Backend Anda:
+```env
+NEXT_PUBLIC_GRAPHQL_HTTP_URL="http://localhost:8080/graphql"
+NEXT_PUBLIC_GRAPHQL_WS_URL="ws://localhost:8080/graphql"
+```
 
-Ensure you have **Node.js** (v18+ recommended) and **npm** installed on your system.
-
-### 🔧 Configuration
-
-1.  Clone this repository to your workspace.
-2.  Copy `.env.example` to `.env`:
-    ```bash
-    cp .env.example .env
-    ```
-3.  Fill in the required environment variables:
-    *   `NEXT_PUBLIC_GRAPHQL_HTTP_URL`: HTTP URL of the GraphQL Backend.
-    *   `NEXT_PUBLIC_GRAPHQL_WS_URL`: WebSocket URL for real-time subscription support.
-
-### 💻 Installation & Development
-
-Install dependencies:
+### 2. Instalasi & Development
+Pasang dependensi dan jalankan server lokal:
 ```bash
 npm install
-```
-
-Run the local development server:
-```bash
 npm run dev
 ```
+Buka browser di [http://localhost:3000](http://localhost:3000).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-### 📦 Build & Production
-
-To build the application for production:
+### 3. Build Produksi
 ```bash
 npm run build
-```
-
-To run the built production server:
-```bash
 npm run start
 ```
-
-To run the linter:
-```bash
-npm run lint
-```
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

@@ -1,4 +1,5 @@
 import { toast as sonnerToast } from "sonner"
+import { getGraphQLErrorMessage } from "./core/apollo/error-handler"
 
 interface ToastDescriptionOptions {
   description?: string
@@ -65,14 +66,10 @@ export const toast = {
   },
   /**
    * Helper specifically for GraphQL errors
+   * Menampilkan pesan error dari backend sebagai judul toast
    */
   graphqlError: (error: unknown, fallbackMessage = "Terjadi kesalahan pada sistem") => {
-    const message =
-      typeof error === 'object' && error !== null && 'message' in error
-        ? (error as { message?: string }).message
-        : undefined
-    return sonnerToast.error("Gagal", {
-      description: message || fallbackMessage,
-    })
+    const message = getGraphQLErrorMessage(error)
+    return sonnerToast.error(message || fallbackMessage)
   }
 }

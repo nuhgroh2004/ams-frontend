@@ -11,8 +11,8 @@ export const GET_LOCATIONS = gql`
         kode_lokasi
         unit_id
         unit {
-          kode
-          name
+          kode_unit
+          nama_unit
         }
       }
       total
@@ -33,8 +33,8 @@ export const CREATE_LOCATION = gql`
       kode_lokasi
       unit_id
       unit {
-        kode
-        name
+        kode_unit
+        nama_unit
       }
     }
   }
@@ -50,8 +50,8 @@ export const UPDATE_LOCATION = gql`
       kode_lokasi
       unit_id
       unit {
-        kode
-          name
+        kode_unit
+        nama_unit
       }
     }
   }

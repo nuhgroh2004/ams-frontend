@@ -1,35 +1,20 @@
 'use client'
 
 import React from 'react'
-import { cn } from '@/lib/utils/cn'
 import { 
-  Pencil, 
-  Power, 
   Trash2, 
   ChevronLeft, 
   ChevronRight,
-  Loader2
+  Loader2,
+  Calendar,
+  Layers,
+  FileText
 } from 'lucide-react'
 import { 
   AppCard, 
-  AppBadge, 
   AppButton,
 } from '@/components/primitives'
-
-interface User {
-  id: string
-  nama_lengkap: string
-  email: string
-  nrp: string
-  jabatan: string
-  is_active: boolean
-  unit?: {
-    nama_unit: string
-  }
-  roles?: {
-    nama_role: string
-  }[]
-}
+import { Procurement } from '../types'
 
 interface PaginationInfo {
   total: number
@@ -38,32 +23,41 @@ interface PaginationInfo {
   totalPages: number
 }
 
-interface UsersTableProps {
-  users: User[]
+interface ProcurementTableProps {
+  procurements: Procurement[]
   loading?: boolean
   pagination?: PaginationInfo
   onPageChange?: (page: number) => void
   onDelete?: (id: string) => void
-  onToggleStatus?: (id: string, currentStatus: boolean) => void
-  onEdit?: (user: User) => void
+  onViewDetails?: (procurement: Procurement) => void
 }
 
-export function UsersTable({
-  users,
+export function ProcurementTable({
+  procurements,
   loading,
   pagination,
   onPageChange,
   onDelete,
-  onToggleStatus,
-  onEdit
-}: UsersTableProps) {
-  if (loading && users.length === 0) {
+  onViewDetails
+}: ProcurementTableProps) {
+  if (loading && procurements.length === 0) {
     return (
       <AppCard className="p-12 flex flex-col items-center justify-center gap-4 border-border bg-card">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground font-medium">Memuat data pengguna...</p>
+        <p className="text-sm text-muted-foreground font-medium">Memuat data pengadaan...</p>
       </AppCard>
     )
+  }
+
+  const formatRupiah = (value?: string | null) => {
+    if (!value) return '-'
+    const num = parseFloat(value)
+    if (isNaN(num)) return '-'
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0
+    }).format(num)
   }
 
   return (
@@ -74,19 +68,19 @@ export function UsersTable({
             <thead className="bg-muted/50">
               <tr>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Pengguna
+                  Nomor Pengadaan / Kontrak
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  NRP & Jabatan
+                  Vendor
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Unit Kerja
+                  Tanggal Pengadaan
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Role
+                  Rincian Barang
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Status
+                  Total Nilai
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
                   Aksi
@@ -94,89 +88,73 @@ export function UsersTable({
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {users.length === 0 ? (
+              {procurements.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
-                    Tidak ada data pengguna ditemukan.
+                    Tidak ada data transaksi pengadaan ditemukan.
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
+                procurements.map((p) => (
                   <tr 
-                    key={user.id} 
+                    key={p.id} 
                     className="hover:bg-muted/30 transition-colors group"
                   >
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="text-sm font-bold text-foreground">
-                          {user.nama_lengkap}
+                          {p.nomor_pengadaan}
                         </span>
-                        <span className="text-xs text-muted-foreground">
-                          {user.email}
-                        </span>
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="text-sm text-foreground">
-                          {user.nrp}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {user.jabatan}
+                        <span className="text-xs text-muted-foreground font-mono">
+                          Kontrak: {p.nomor_kontrak || '-'}
                         </span>
                       </div>
                     </td>
 
                     <td className="px-6 py-4">
-                      <span className="text-sm text-foreground">
-                        {user.unit?.nama_unit || '-'}
+                      <span className="text-sm text-foreground font-medium">
+                        {p.vendor || '-'}
                       </span>
                     </td>
 
-                    <td className="px-6 py-4">
-                      <AppBadge variant="neutral" badgeStyle="outline">
-                        {user.roles?.[0]?.nama_role || 'User'}
-                      </AppBadge>
+                    <td className="px-6 py-4 text-sm text-foreground">
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span className="text-foreground">{p.tanggal_pengadaan || '-'}</span>
+                      </div>
                     </td>
 
                     <td className="px-6 py-4">
-                      <AppBadge 
-                        variant={user.is_active ? 'success' : 'danger'} 
-                        badgeStyle="dot"
-                      >
-                        {user.is_active ? 'Aktif' : 'Nonaktif'}
-                      </AppBadge>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Layers className="h-4 w-4 text-primary shrink-0" />
+                        <span className="font-semibold text-foreground">
+                          {p.items?.length || 0} Item
+                        </span>
+                        <span className="text-xs">
+                          ({p.items?.reduce((acc, curr) => acc + (curr.quantity || 0), 0) || 0} unit)
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 text-sm font-bold text-foreground">
+                      {formatRupiah(p.total_nilai)}
                     </td>
 
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <AppButton 
-                          size="icon_sm" 
-                          variant="ghost" 
-                          className="text-muted-foreground hover:text-foreground"
-                          onClick={() => onEdit?.(user)}
+                          size="sm" 
+                          variant="outline" 
+                          icon={FileText}
+                          onClick={() => onViewDetails?.(p)}
                         >
-                          <Pencil className="h-4 w-4" />
-                        </AppButton>
-                        <AppButton 
-                          size="icon_sm" 
-                          variant="ghost" 
-                          className={cn(
-                            "transition-colors",
-                            user.is_active 
-                              ? "text-success/70 hover:text-success" 
-                              : "text-muted-foreground hover:text-foreground"
-                          )}
-                          onClick={() => onToggleStatus?.(user.id, user.is_active)}
-                        >
-                          <Power className="h-4 w-4" />
+                          Detail
                         </AppButton>
                         <AppButton 
                           size="icon_sm" 
                           variant="ghost" 
                           className="text-muted-foreground hover:text-destructive"
-                          onClick={() => onDelete?.(user.id)}
+                          onClick={() => onDelete?.(p.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </AppButton>
@@ -190,19 +168,18 @@ export function UsersTable({
         </div>
       </AppCard>
 
-      {/* Pagination Container */}
+      {/* Pagination */}
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 mt-4">
           <p className="text-sm text-muted-foreground">
             Menampilkan <span className="font-medium text-foreground">
               {((pagination.page - 1) * pagination.limit) + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)}
-            </span> dari <span className="font-medium text-foreground">{pagination.total}</span> pengguna
+            </span> dari <span className="font-medium text-foreground">{pagination.total}</span> pengadaan
           </p>
           <div className="flex items-center gap-2">
             <AppButton 
               variant="outline" 
               size="sm" 
-              className="gap-1"
               disabled={pagination.page <= 1}
               onClick={() => onPageChange?.(pagination.page - 1)}
             >
@@ -212,7 +189,6 @@ export function UsersTable({
             <AppButton 
               variant="outline" 
               size="sm" 
-              className="gap-1"
               disabled={pagination.page >= pagination.totalPages}
               onClick={() => onPageChange?.(pagination.page + 1)}
             >
