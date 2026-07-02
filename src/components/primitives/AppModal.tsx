@@ -2,15 +2,7 @@
 
 import * as React from 'react'
 import { X } from 'lucide-react'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle,
-  DialogPortal,
-  DialogOverlay,
-} from '@/components/ui/dialog'
+import { Dialog as DialogPrimitive } from 'radix-ui'
 import { cn } from '@/lib/utils'
 
 interface AppModalProps {
@@ -47,10 +39,10 @@ export function AppModal({
   showCloseButton = true,
 }: AppModalProps) {
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogPortal>
-        <DialogOverlay className="bg-background/80 backdrop-blur-sm animate-in fade-in duration-200 fixed inset-0 z-50" />
-        <DialogContent 
+    <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="bg-background/80 backdrop-blur-sm animate-in fade-in duration-200 fixed inset-0 z-50" />
+        <DialogPrimitive.Content 
           className={cn(
             "fixed left-[50%] top-[50%] z-50 w-[95vw] sm:w-[unset] translate-x-[-50%] translate-y-[-50%]",
             "bg-card border border-border shadow-2xl rounded-2xl p-0 outline-none",
@@ -62,16 +54,16 @@ export function AppModal({
           )}
         >
           {/* Header */}
-          <DialogHeader className="p-6 pb-4 relative border-b border-border shrink-0">
+          <div className="p-6 pb-4 relative border-b border-border shrink-0">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <DialogTitle className="text-xl font-bold text-foreground tracking-tight">
+                <DialogPrimitive.Title className="text-xl font-bold text-foreground tracking-tight">
                   {title}
-                </DialogTitle>
+                </DialogPrimitive.Title>
                 {description && (
-                  <DialogDescription className="text-sm text-muted-foreground">
+                  <DialogPrimitive.Description className="text-sm text-muted-foreground">
                     {description}
-                  </DialogDescription>
+                  </DialogPrimitive.Description>
                 )}
               </div>
               
@@ -85,7 +77,7 @@ export function AppModal({
                 </button>
               )}
             </div>
-          </DialogHeader>
+          </div>
           
           {/* Content Area with Auto-Scroll */}
           <div className="p-6 pt-4 overflow-y-auto flex-1 custom-scrollbar scroll-smooth">
@@ -93,8 +85,8 @@ export function AppModal({
               {children}
             </div>
           </div>
-        </DialogContent>
-      </DialogPortal>
-    </Dialog>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   )
-}
+}
