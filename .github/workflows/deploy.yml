@@ -1,8 +1,9 @@
-name: Deploy Frontend VPS
+name: Deploy to VPS
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
 
 jobs:
   deploy:
@@ -10,28 +11,17 @@ jobs:
 
     steps:
       - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
           script: |
-            echo "Start Frontend Deployment"
+            cd ~/frontend_ams
+            git pull origin master
 
-            cd ~/ams-frontend
+            # cd ~/backend_ams
+            # git pull origin master
 
-            git fetch origin
-            git reset --hard origin/master
-
-            npm install
-
-            rm -rf .next
-
-            npm run build
-
-            pm2 restart ams-frontend || pm2 start npm --name ams-frontend -- start
-
-            pm2 save
-
-            echo "Deployment Success"
+            cd ~/ams-deploy
+            docker compose up -d --build
