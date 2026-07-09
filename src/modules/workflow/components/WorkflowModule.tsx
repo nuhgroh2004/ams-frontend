@@ -7,6 +7,7 @@ import { gql, useQuery, useMutation, useLazyQuery } from '@apollo/client'
 import { toast } from '@/lib/toast'
 import { Check, X, ShieldAlert, Clock, User } from 'lucide-react'
 import dayjs from 'dayjs'
+import { cn } from '@/lib/utils'
 
 const GET_PENDING_APPROVALS = gql`
   query GetMyPendingApprovals {
@@ -24,6 +25,21 @@ const GET_PENDING_APPROVALS = gql`
         workflow {
           nama_workflow
           entity_type
+          steps {
+            id
+            step_order
+            nama_step
+          }
+        }
+        approvals {
+          id
+          step_id
+          status
+          notes
+          approved_at
+          approver {
+            nama_lengkap
+          }
         }
         startedBy {
           nama_lengkap
@@ -225,6 +241,66 @@ export function WorkflowModule() {
                       <span>
                         Diajukan oleh: <strong className="font-medium">{app.workflowInstance.startedBy?.nama_lengkap || 'User'}</strong>
                       </span>
+                    </div>
+
+                    {/* Visual Workflow Steps Progress Timeline */}
+                    <div className="border-t border-border/60 pt-4">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 ml-1">
+                        Alur Persetujuan ({app.workflowInstance.workflow?.steps?.length || 0} Langkah)
+                      </p>
+                      
+                      <div className="flex flex-col gap-3 relative pl-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-px before:bg-border">
+                        {app.workflowInstance.workflow?.steps?.map((step: any) => {
+                          const approvalRecord = app.workflowInstance.approvals?.find(
+                            (a: any) => a.step_id === step.id
+                          );
+                          
+                          let isCurrent = app.step.step_order === step.step_order;
+                          let isApproved = approvalRecord?.status === 'disetujui';
+                          let isRejected = approvalRecord?.status === 'ditolak';
+                          
+                          let statusText = 'Belum Dimulai';
+                          let dotColor = 'bg-muted border-border';
+                          let textColor = 'text-muted-foreground';
+                          
+                          if (isCurrent) {
+                            statusText = 'Menunggu Persetujuan Anda';
+                            dotColor = 'bg-primary border-primary ring-4 ring-primary/10';
+                            textColor = 'text-primary font-semibold';
+                          } else if (isApproved) {
+                            statusText = `Disetujui oleh ${approvalRecord?.approver?.nama_lengkap || 'Sistem'}`;
+                            dotColor = 'bg-green-500 border-green-500';
+                            textColor = 'text-foreground font-medium';
+                          } else if (isRejected) {
+                            statusText = `Ditolak oleh ${approvalRecord?.approver?.nama_lengkap || 'Sistem'}`;
+                            dotColor = 'bg-red-500 border-red-500';
+                            textColor = 'text-danger font-medium';
+                          }
+                          
+                          return (
+                            <div key={step.id} className="relative text-xs flex justify-between items-start gap-4">
+                              <span className={cn(
+                                "absolute -left-[14.5px] top-1.5 h-2 w-2 rounded-full border-2",
+                                dotColor
+                              )} />
+                              
+                              <div className="flex-1">
+                                <p className={cn("text-xs leading-none", textColor)}>
+                                  Langkah {step.step_order}: {step.nama_step}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">
+                                  {statusText}
+                                </p>
+                                {approvalRecord?.notes && (
+                                  <p className="text-[10px] italic text-muted-foreground bg-muted/20 p-1.5 rounded mt-1 border border-border/40">
+                                    Catatan: "{approvalRecord.notes}"
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
 

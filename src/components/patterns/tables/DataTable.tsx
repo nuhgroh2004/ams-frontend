@@ -58,6 +58,10 @@ function DataTable<TData, TValue>({
     pageSize,
   })
 
+  React.useEffect(() => {
+    setPagination({ pageIndex, pageSize })
+  }, [pageIndex, pageSize])
+
   const table = useReactTable({
     data,
     columns,
@@ -65,7 +69,7 @@ function DataTable<TData, TValue>({
       sorting: enableSorting ? sorting : undefined,
       columnFilters: enableFiltering ? columnFilters : undefined,
       columnVisibility: enableColumnVisibility ? columnVisibility : undefined,
-      pagination: manualPagination ? undefined : pagination,
+      pagination: pagination,
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
