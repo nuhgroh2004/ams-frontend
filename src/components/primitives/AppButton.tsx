@@ -65,6 +65,7 @@ interface AppButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof appButtonVariants> {
   loading?: boolean
+  isLoading?: boolean
   icon?: React.ComponentType<{ className?: string }>
   iconPosition?: 'left' | 'right'
 }
@@ -77,6 +78,7 @@ const AppButton = React.forwardRef<HTMLButtonElement, AppButtonProps>(
       size,
       fullWidth,
       loading,
+      isLoading,
       icon: Icon,
       iconPosition = 'left',
       disabled,
@@ -85,7 +87,8 @@ const AppButton = React.forwardRef<HTMLButtonElement, AppButtonProps>(
     },
     ref
   ) => {
-    const isDisabled = disabled || loading
+    const isBtnLoading = loading || isLoading
+    const isDisabled = disabled || isBtnLoading
 
     return (
       <button
@@ -99,14 +102,14 @@ const AppButton = React.forwardRef<HTMLButtonElement, AppButtonProps>(
         {...props}
       >
         {/* Loading spinner overlay */}
-        {loading && (
+        {isBtnLoading && (
           <div className="absolute inset-0 flex items-center justify-center">
             <Loader2 className="h-5 w-5 animate-spin" />
           </div>
         )}
 
         {/* Content - fade when loading */}
-        <span className={cn('flex items-center gap-2', loading && 'invisible')}>
+        <span className={cn('flex items-center gap-2', isBtnLoading && 'invisible')}>
           {Icon && iconPosition === 'left' && (
             <Icon className={size?.startsWith('icon') ? 'h-5 w-5' : 'h-4 w-4'} />
           )}

@@ -20,13 +20,14 @@ export interface AppSelectProps {
 const AppSelect = React.forwardRef<HTMLButtonElement, AppSelectProps>(
   ({ value, onValueChange, onChange, options = [], placeholder = 'Select category', error, disabled }, ref) => {
     const handleValueChange = (newValue: string) => {
-      onValueChange?.(newValue)
-      onChange?.(newValue)
+      const val = newValue === "__empty__" ? "" : newValue
+      onValueChange?.(val)
+      onChange?.(val)
     }
 
     return (
       <div>
-        <UISelect value={value} onValueChange={handleValueChange} disabled={disabled}>
+        <UISelect value={value === "" ? "__empty__" : value} onValueChange={handleValueChange} disabled={disabled}>
           <SelectTrigger
             ref={ref}
             className={cn(
@@ -45,10 +46,10 @@ const AppSelect = React.forwardRef<HTMLButtonElement, AppSelectProps>(
                 return (
                   <SelectGroup key={`group-${idx}`}>
                     <SelectLabel>{option.label}</SelectLabel>
-                    {option.options.map((subOption) => (
+                    {option.options.map((subOption, subIdx) => (
                       <SelectItem 
-                        key={subOption.value} 
-                        value={subOption.value} 
+                        key={subOption.value || `empty-${idx}-${subIdx}`} 
+                        value={subOption.value === "" ? "__empty__" : subOption.value} 
                         disabled={subOption.disabled}
                         className="focus:bg-muted"
                       >
@@ -60,8 +61,8 @@ const AppSelect = React.forwardRef<HTMLButtonElement, AppSelectProps>(
               }
               return (
                 <SelectItem 
-                  key={option.value} 
-                  value={option.value} 
+                  key={option.value || `empty-${idx}`} 
+                  value={option.value === "" ? "__empty__" : option.value} 
                   disabled={option.disabled} 
                   className="focus:bg-muted"
                 >
