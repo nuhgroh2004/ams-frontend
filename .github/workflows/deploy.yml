@@ -17,11 +17,16 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
           script: |
+            # Masuk ke folder backend
             cd ~/ams-frontend
+
+            # Ambil perubahan terbaru dari GitHub
             git pull origin master
 
-            # cd ~/backend_ams
-            # git pull origin master
-
+            # Masuk ke folder docker-compose
             cd ~/ams-deploy
-            docker compose up -d --build
+
+            # Build ulang image jika ada perubahan
+            # Container lama akan diganti dengan yang baru
+            # Volume mysql_data TIDAK akan dihapus
+            docker compose up -d --build --remove-orphans
