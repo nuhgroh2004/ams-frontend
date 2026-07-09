@@ -1,8 +1,8 @@
-name: Deploy Frontend VPS
-
+name: Deploy to VPS
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
 
 jobs:
   deploy:
@@ -10,28 +10,22 @@ jobs:
 
     steps:
       - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
           script: |
-            echo "Start Frontend Deployment"
+            # Masuk ke folder backend
+            cd ~/frontend_ams
 
-            cd ~/ams-frontend
+            # Ambil perubahan terbaru dari GitHub
+            git pull origin master
 
-            git fetch origin
-            git reset --hard origin/master
+            # Masuk ke folder docker-compose
+            cd ~/ams-deploy
 
-            npm install
-
-            rm -rf .next
-
-            npm run build
-
-            pm2 restart ams-frontend || pm2 start npm --name ams-frontend -- start
-
-            pm2 save
-
-            echo "Deployment Success"
+            # Build ulang image jika ada perubahan
+            # Container lama akan diganti dengan yang baru
+            # Volume mysql_data TIDAK akan dihapus
+            docker compose up -d --build --remove-orphans
