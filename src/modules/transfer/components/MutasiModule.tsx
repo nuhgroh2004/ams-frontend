@@ -24,6 +24,8 @@ import {
 import { useAssets } from '@/modules/asset/hooks/useAssets'
 import { useLocations } from '@/modules/locations/hooks/useLocations'
 import { useAuth } from '@/modules/auth/hooks/useAuth'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { hasPermissionForUser } from '@/lib/permissions'
 import { useQuery } from '@apollo/client'
 import { GET_USERS_QUERY, GET_UNITS_QUERY } from '@/modules/users/services/user.graphql'
 import {
@@ -113,29 +115,24 @@ export function MutasiModule() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
   // Create Form Hook
-  const {
-    control,
-    handleSubmit,
-    watch,
-    reset,
-    formState: { errors }
-  } = useForm<AjukanMutasiFormInput>({
+
+  const { register, handleSubmit, control, watch, reset, formState: { errors } } = useForm<AjukanMutasiFormInput>({
     resolver: zodResolver(ajukanMutasiSchema),
     defaultValues: {
       asset_id: '',
       jenis_mutasi: 'ruangan',
-      lokasi_tujuan_id: '',
-      unit_tujuan_id: '',
-      pj_tujuan_id: '',
       alasan_mutasi: ''
     }
   })
 
   const selectedJenis = watch('jenis_mutasi')
 
-  const isOperator = user?.roles?.some(
-    (r: any) => r.nama_role === 'ADMIN_SISTEM' || r.nama_role === 'OPERATOR_BMN' || r.nama_role === 'KEPALA_UNIT_KERJA'
-  )
+  const currentUser = useAuthStore((state) => state.user)
+
+  // Granular permission flags
+  const canCreate   = hasPermissionForUser(currentUser, 'transfer:create')
+  const canApprove  = hasPermissionForUser(currentUser, 'transfer:approve')
+  const canDownload = hasPermissionForUser(currentUser, 'transfer:bast')
 
   const handleCreateClose = () => {
     setIsCreateOpen(false)
@@ -332,8 +329,8 @@ export function MutasiModule() {
               Detail
             </AppButton>
 
-            {/* Operator Actions for waiting approval */}
-            {isOperator && mutasi.status === 'menunggu_approval' && (
+            {/* Approve / Reject — transfer:approve */}
+            {canApprove && mutasi.status === 'menunggu_approval' && (
               <>
                 <AppButton
                   size="sm"
@@ -362,21 +359,23 @@ export function MutasiModule() {
               </>
             )}
 
-            {/* Complete action when approved */}
+            {/* BAST download + complete — disetujui state */}
             {mutasi.status === 'disetujui' && (
               <>
-                <AppButton
-                  size="sm"
-                  variant="outline"
-                  className="text-primary hover:text-primary border-primary/30 hover:border-primary/60"
-                  icon={FileDown}
-                  onClick={() => handleDownloadBAST(mutasi.id)}
-                  loading={generatingBAST}
-                >
-                  BAST
-                </AppButton>
+                {canDownload && (
+                  <AppButton
+                    size="sm"
+                    variant="outline"
+                    className="text-primary hover:text-primary border-primary/30 hover:border-primary/60"
+                    icon={FileDown}
+                    onClick={() => handleDownloadBAST(mutasi.id)}
+                    loading={generatingBAST}
+                  >
+                    BAST
+                  </AppButton>
+                )}
                 
-                {isOperator && (
+                {canApprove && (
                   <AppButton
                     size="sm"
                     variant="outline"
@@ -437,13 +436,15 @@ export function MutasiModule() {
             ))}
           </div>
 
-          <AppButton
-            variant="primary"
-            icon={Plus}
-            onClick={() => setIsCreateOpen(true)}
-          >
-            Ajukan Mutasi
-          </AppButton>
+          {canCreate && (
+            <AppButton
+              variant="primary"
+              icon={Plus}
+              onClick={() => setIsCreateOpen(true)}
+            >
+              Ajukan Mutasi
+            </AppButton>
+          )}
         </div>
 
         {/* Data View */}

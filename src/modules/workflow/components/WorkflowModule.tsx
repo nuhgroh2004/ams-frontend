@@ -8,6 +8,8 @@ import { toast } from '@/lib/toast'
 import { Check, X, ShieldAlert, Clock, User } from 'lucide-react'
 import dayjs from 'dayjs'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { hasPermissionForUser } from '@/lib/permissions'
 
 const GET_PENDING_APPROVALS = gql`
   query GetMyPendingApprovals {
@@ -17,6 +19,9 @@ const GET_PENDING_APPROVALS = gql`
       step {
         nama_step
         step_order
+        role {
+          nama_role
+        }
       }
       workflowInstance {
         id
@@ -29,6 +34,9 @@ const GET_PENDING_APPROVALS = gql`
             id
             step_order
             nama_step
+            role {
+              nama_role
+            }
           }
         }
         approvals {
@@ -123,9 +131,32 @@ const GET_LOSS_DETAILS = gql`
   }
 `
 
+const GET_LOAN_DETAILS = gql`
+  query GetLoanDetails($id: ID!) {
+    peminjaman(id: $id) {
+      id
+      status
+      tanggal_pinjam
+      tanggal_rencana_kembali
+      catatan_pengaju
+      asset {
+        nama_barang
+        nomor_register
+      }
+      peminjam {
+        nama_lengkap
+      }
+    }
+  }
+`
+
 export function WorkflowModule() {
+  const currentUser = useAuthStore((state) => state.user)
+  const canView = hasPermissionForUser(currentUser, 'workflow:view')
+
   const { data, loading, refetch } = useQuery(GET_PENDING_APPROVALS, {
     fetchPolicy: 'network-only',
+    skip: !canView
   })
   const [approveStepMutation, { loading: isApproving }] = useMutation(APPROVE_STEP)
   const [rejectStepMutation, { loading: isRejecting }] = useMutation(REJECT_STEP)
@@ -133,6 +164,7 @@ export function WorkflowModule() {
   const [getMutasi, { data: mutasiData, loading: loadingMutasi }] = useLazyQuery(GET_MUTASI_DETAILS, { fetchPolicy: 'network-only' })
   const [getDisposal, { data: disposalData, loading: loadingDisposal }] = useLazyQuery(GET_DISPOSAL_DETAILS, { fetchPolicy: 'network-only' })
   const [getLoss, { data: lossData, loading: loadingLoss }] = useLazyQuery(GET_LOSS_DETAILS, { fetchPolicy: 'network-only' })
+  const [getLoan, { data: loanData, loading: loadingLoan }] = useLazyQuery(GET_LOAN_DETAILS, { fetchPolicy: 'network-only' })
 
   const [selectedApproval, setSelectedApproval] = useState<any | null>(null)
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null)
@@ -154,6 +186,8 @@ export function WorkflowModule() {
       getDisposal({ variables: { id: entityId } })
     } else if (entityType === 'loss') {
       getLoss({ variables: { id: entityId } })
+    } else if (entityType === 'loan') {
+      getLoan({ variables: { id: entityId } })
     }
   }
 
@@ -185,6 +219,22 @@ export function WorkflowModule() {
     }
   }
 
+  if (!canView) {
+    return (
+      <PageShell
+        title="Kotak Masuk Persetujuan"
+        description="Akses ditolak."
+      >
+        <AppCard variant="alert">
+          <AppCardContent className="flex items-center gap-3 pt-5 text-destructive">
+            <ShieldAlert className="h-5 w-5" />
+            <p className="text-sm font-medium">Anda tidak memiliki izin untuk melihat kotak masuk persetujuan.</p>
+          </AppCardContent>
+        </AppCard>
+      </PageShell>
+    )
+  }
+
   return (
     <PageShell
       title="Kotak Masuk Persetujuan"
@@ -209,10 +259,17 @@ export function WorkflowModule() {
                 <AppCardContent className="p-6 flex flex-col justify-between h-full">
                   <div className="space-y-4">
                     <div className="flex justify-between items-start">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
-                        <Clock className="h-3.5 w-3.5" />
-                        Langkah {app.step.step_order}: {app.step.nama_step}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary w-fit">
+                          <Clock className="h-3.5 w-3.5" />
+                          Langkah {app.step.step_order}: {app.step.nama_step}
+                        </span>
+                        {app.step.role?.nama_role && (
+                          <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">
+                            Peran Approver: {app.step.role.nama_role}
+                          </span>
+                        )}
+                      </div>
                       <span className="text-xs text-muted-foreground">
                         {dayjs(app.workflowInstance.started_at).format('YYYY-MM-DD')}
                       </span>
@@ -230,6 +287,8 @@ export function WorkflowModule() {
                           ? 'bg-blue-500/10 text-blue-500'
                           : app.workflowInstance.entity_type === 'disposal'
                           ? 'bg-yellow-500/10 text-yellow-500'
+                          : app.workflowInstance.entity_type === 'loan'
+                          ? 'bg-purple-500/10 text-purple-500'
                           : 'bg-red-500/10 text-red-500'
                       }`}>
                         {app.workflowInstance.entity_type}
@@ -285,12 +344,12 @@ export function WorkflowModule() {
                               )} />
                               
                               <div className="flex-1">
-                                <p className={cn("text-xs leading-none", textColor)}>
-                                  Langkah {step.step_order}: {step.nama_step}
-                                </p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">
-                                  {statusText}
-                                </p>
+                                  <p className={cn("text-xs leading-none", textColor)}>
+                                    Langkah {step.step_order}: {step.nama_step} {step.role?.nama_role && `(${step.role.nama_role})`}
+                                  </p>
+                                  <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">
+                                    {statusText}
+                                  </p>
                                 {approvalRecord?.notes && (
                                   <p className="text-[10px] italic text-muted-foreground bg-muted/20 p-1.5 rounded mt-1 border border-border/40">
                                     Catatan: "{approvalRecord.notes}"
@@ -347,7 +406,7 @@ export function WorkflowModule() {
             {/* Detailed Proposal View */}
             <div className="bg-muted/40 p-4 rounded-xl border border-border space-y-3">
               <h5 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Detail Usulan</h5>
-              {loadingMutasi || loadingDisposal || loadingLoss ? (
+              {loadingMutasi || loadingDisposal || loadingLoss || loadingLoan ? (
                 <div className="flex items-center justify-center py-6">
                   <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                 </div>
@@ -433,6 +492,31 @@ export function WorkflowModule() {
                         <span className="text-[11px] text-muted-foreground block">Kronologi</span>
                         <p className="mt-1 text-xs text-foreground italic bg-background/50 p-2.5 rounded-lg border border-border/50">
                           "{lossData.lossReport.kronologi}"
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedApproval.workflowInstance.entity_type === 'loan' && loanData?.peminjaman && (
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="col-span-2">
+                        <span className="text-[11px] text-muted-foreground block">Nama Aset</span>
+                        <span className="font-semibold text-foreground">{loanData.peminjaman.asset.nama_barang} ({loanData.peminjaman.asset.nomor_register || '-'})</span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-muted-foreground block">Peminjam</span>
+                        <span className="font-semibold text-foreground">{loanData.peminjaman.peminjam?.nama_lengkap || '-'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-muted-foreground block">Rencana Kembali</span>
+                        <span className="font-semibold text-foreground">
+                          {dayjs(loanData.peminjaman.tanggal_rencana_kembali).format('YYYY-MM-DD')}
+                        </span>
+                      </div>
+                      <div className="col-span-2 border-t border-border pt-2.5 mt-1">
+                        <span className="text-[11px] text-muted-foreground block">Catatan Pengaju</span>
+                        <p className="mt-1 text-xs text-foreground italic bg-background/50 p-2.5 rounded-lg border border-border/50">
+                          "{loanData.peminjaman.catatan_pengaju || 'Tidak ada catatan'}"
                         </p>
                       </div>
                     </div>

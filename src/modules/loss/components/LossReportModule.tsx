@@ -7,6 +7,8 @@ import { gql, useQuery, useMutation } from '@apollo/client'
 import { toast } from '@/lib/toast'
 import { Plus, Eye, FileText, CheckCircle2, XCircle, HelpCircle, AlertTriangle, Landmark } from 'lucide-react'
 import dayjs from 'dayjs'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { hasPermissionForUser } from '@/lib/permissions'
 
 const GET_LOSS_REPORTS = gql`
   query GetLossReports($status: LossReportStatus, $page: Int, $limit: Int) {
@@ -43,6 +45,9 @@ const GET_LOSS_REPORTS = gql`
             approved_at
             step {
               nama_step
+              role {
+                nama_role
+              }
             }
             approver {
               nama_lengkap
@@ -93,6 +98,9 @@ const SELESAIKAN_KEHILANGAN = gql`
 `
 
 export function LossReportModule() {
+  const currentUser = useAuthStore((state) => state.user)
+  const canReport  = hasPermissionForUser(currentUser, 'loss:report')
+  const canApproveLoss = hasPermissionForUser(currentUser, 'loss:approve')
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('all')
   const limit = 10
@@ -228,7 +236,7 @@ export function LossReportModule() {
       id: 'actions',
       header: 'Aksi',
       cell: ({ row }: any) => {
-        if (row.original.status_proses === 'proses_tgr') {
+        if (row.original.status_proses === 'proses_tgr' && canApproveLoss) {
           return (
             <div className="flex gap-2">
               <AppButton size="sm" icon={Landmark} onClick={() => handleProsesTGRClick(row.original)}>
@@ -268,9 +276,11 @@ export function LossReportModule() {
               ]}
             />
           </div>
-          <AppButton icon={Plus} onClick={() => setIsSubmitOpen(true)}>
-            Lapor Kehilangan
-          </AppButton>
+          {canReport && (
+            <AppButton icon={Plus} onClick={() => setIsSubmitOpen(true)}>
+              Lapor Kehilangan
+            </AppButton>
+          )}
         </div>
 
         <DataTable
@@ -412,7 +422,9 @@ export function LossReportModule() {
                       <div key={app.id} className={`flex items-start gap-3 p-3 rounded-xl border ${color}`}>
                         <Icon className="h-5 w-5 flex-shrink-0 mt-0.5" />
                         <div className="space-y-1">
-                          <p className="font-semibold text-sm">{app.step.nama_step}</p>
+                          <p className="font-semibold text-sm">
+                            {app.step.nama_step} {app.step.role?.nama_role && `(${app.step.role.nama_role})`}
+                          </p>
                           <p className="text-xs">
                             Status: <strong className="uppercase">{app.status}</strong> 
                             {app.approver?.nama_lengkap && ` oleh ${app.approver.nama_lengkap}`}

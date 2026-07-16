@@ -24,12 +24,19 @@ import { getGraphQLErrorMessage } from '@/lib/core/apollo'
 
 import { UserFormModal } from './modals/UserFormModal'
 import { ConfirmActionModal } from './modals/ConfirmActionModal'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { hasPermissionForUser } from '@/lib/permissions'
 
 /**
  * UsersModule
  * Logical container for User Management feature.
  */
 export function UsersModule() {
+  const currentUser = useAuthStore((state) => state.user)
+  const canCreate = hasPermissionForUser(currentUser, 'user:create')
+  const canEdit   = hasPermissionForUser(currentUser, 'user:edit')
+  const canDelete = hasPermissionForUser(currentUser, 'user:delete')
+
   // State for filters and pagination
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -214,14 +221,16 @@ export function UsersModule() {
 
         {/* Add User Button */}
         <div className="md:col-span-3 lg:col-span-3">
-          <AppButton 
-            fullWidth 
-            icon={Plus} 
-            variant="primary"
-            onClick={handleAdd}
-          >
-            Tambah Pengguna
-          </AppButton>
+          {canCreate && (
+            <AppButton 
+              fullWidth 
+              icon={Plus} 
+              variant="primary"
+              onClick={handleAdd}
+            >
+              Tambah Pengguna
+            </AppButton>
+          )}
         </div>
       </div>
 
@@ -231,9 +240,9 @@ export function UsersModule() {
         loading={loading}
         pagination={pagination}
         onPageChange={setPage}
-        onDelete={handleDelete}
-        onToggleStatus={handleToggleStatus}
-        onEdit={handleEdit}
+        onDelete={canDelete ? handleDelete : undefined}
+        onToggleStatus={canEdit ? handleToggleStatus : undefined}
+        onEdit={canEdit ? handleEdit : undefined}
       />
     </PageShell>
   )

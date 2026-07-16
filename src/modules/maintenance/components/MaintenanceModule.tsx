@@ -7,6 +7,8 @@ import { gql, useQuery, useMutation } from '@apollo/client'
 import { toast } from '@/lib/toast'
 import { Plus, Play, Check, AlertCircle } from 'lucide-react'
 import dayjs from 'dayjs'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { hasPermissionForUser } from '@/lib/permissions'
 
 const GET_MAINTENANCE_RECORDS = gql`
   query GetMaintenanceRecords($status: MaintenanceStatus, $page: Int, $limit: Int) {
@@ -76,6 +78,9 @@ const FINISH_MAINTENANCE = gql`
 `
 
 export function MaintenanceModule() {
+  const currentUser = useAuthStore((state) => state.user)
+  const canCreate   = hasPermissionForUser(currentUser, 'maintenance:create')
+  const canComplete = hasPermissionForUser(currentUser, 'maintenance:complete')
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('all')
   const limit = 10
@@ -231,18 +236,18 @@ export function MaintenanceModule() {
       header: 'Aksi',
       cell: ({ row }: any) => {
         if (row.original.status === 'pengajuan') {
-          return (
+          return canCreate ? (
             <AppButton size="sm" icon={Play} onClick={() => handleStartMaintenance(row.original.id)}>
               Mulai
             </AppButton>
-          )
+          ) : null
         }
         if (row.original.status === 'proses') {
-          return (
+          return canComplete ? (
             <AppButton size="sm" icon={Check} variant="primary" onClick={() => handleFinishClick(row.original.id)}>
               Selesai
             </AppButton>
-          )
+          ) : null
         }
         return '-'
       },
@@ -269,9 +274,11 @@ export function MaintenanceModule() {
               ]}
             />
           </div>
-          <AppButton icon={Plus} onClick={() => setIsSubmitOpen(true)}>
-            Ajukan Perawatan
-          </AppButton>
+          {canCreate && (
+            <AppButton icon={Plus} onClick={() => setIsSubmitOpen(true)}>
+              Ajukan Perawatan
+            </AppButton>
+          )}
         </div>
 
         <DataTable

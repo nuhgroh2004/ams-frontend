@@ -26,6 +26,8 @@ import {
 } from '../hooks/useLoanMutations'
 import { useAssets } from '@/modules/asset/hooks/useAssets'
 import { useAuth } from '@/modules/auth/hooks/useAuth'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { hasPermissionForUser } from '@/lib/permissions'
 import { 
   Plus, 
   Eye, 
@@ -70,6 +72,13 @@ const STATUS_VARIANTS: Record<string, 'neutral' | 'info' | 'success' | 'danger' 
 
 export function LoanModule() {
   const { user } = useAuth()
+  const currentUser = useAuthStore((state) => state.user)
+
+  // Granular permission flags — evaluated reactively during render
+  const canCreate     = hasPermissionForUser(currentUser, 'loan:create')
+  const canApprove    = hasPermissionForUser(currentUser, 'loan:approve')
+  const canReturnLoan = hasPermissionForUser(currentUser, 'loan:return')
+  const canCancelLoan = hasPermissionForUser(currentUser, 'loan:cancel')
   const [page, setPage] = useState(1)
   const [limit] = useState(10)
   const [statusFilter, setStatusFilter] = useState<string>('')
@@ -152,7 +161,6 @@ export function LoanModule() {
     }
   }
 
-  const isOperator = user?.roles?.some(r => r.nama_role === 'operator_bmn' || r.nama_role === 'admin')
 
   // Table Columns Setup
   const columns: ColumnDef<LoanDTO>[] = [
@@ -251,8 +259,8 @@ export function LoanModule() {
               Detail
             </AppButton>
 
-            {/* Operator Actions */}
-            {isOperator && loan.status === 'menunggu' && (
+            {/* Approve / Reject — loan:approve */}
+            {canApprove && loan.status === 'menunggu' && (
               <>
                 <AppButton
                   size="sm"
@@ -281,8 +289,8 @@ export function LoanModule() {
               </>
             )}
 
-            {/* Handover & Return Actions */}
-            {loan.status === 'disetujui' && (isOperator || isOwnLoan) && (
+            {/* Handover — loan:return (operator initiates physical handover) */}
+            {loan.status === 'disetujui' && (canReturnLoan || isOwnLoan) && (
               <AppButton
                 size="sm"
                 variant="outline"
@@ -297,7 +305,8 @@ export function LoanModule() {
               </AppButton>
             )}
 
-            {loan.status === 'dipinjam' && (isOperator || isOwnLoan) && (
+            {/* Return — loan:return */}
+            {loan.status === 'dipinjam' && (canReturnLoan || isOwnLoan) && (
               <AppButton
                 size="sm"
                 variant="outline"
@@ -312,8 +321,8 @@ export function LoanModule() {
               </AppButton>
             )}
 
-            {/* Cancel Action */}
-            {loan.status === 'menunggu' && isOwnLoan && (
+            {/* Cancel — own loan only + loan:cancel permission */}
+            {loan.status === 'menunggu' && isOwnLoan && canCancelLoan && (
               <AppButton
                 size="sm"
                 variant="outline"
@@ -377,13 +386,15 @@ export function LoanModule() {
             ))}
           </div>
 
-          <AppButton
-            variant="primary"
-            icon={Plus}
-            onClick={() => setIsCreateOpen(true)}
-          >
-            Ajukan Peminjaman
-          </AppButton>
+          {canCreate && (
+            <AppButton
+              variant="primary"
+              icon={Plus}
+              onClick={() => setIsCreateOpen(true)}
+            >
+              Ajukan Peminjaman
+            </AppButton>
+          )}
         </div>
 
         {/* Data View */}

@@ -11,8 +11,14 @@ import { useAssets } from '../hooks/useAssets'
 import { useDeleteAsset } from '../hooks/useAssetMutations'
 import { toast } from '@/lib/toast'
 import { Asset } from '../types'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { hasPermissionForUser } from '@/lib/permissions'
 
 export function AssetModule() {
+  const currentUser = useAuthStore((state) => state.user)
+  const canCreate = hasPermissionForUser(currentUser, 'asset:create')
+  const canEdit   = hasPermissionForUser(currentUser, 'asset:edit')
+  const canDelete = hasPermissionForUser(currentUser, 'asset:delete')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -163,16 +169,18 @@ export function AssetModule() {
           />
         </div>
 
-        {/* Add Button */}
+        {/* Add Button — asset:create */}
         <div className="md:col-span-2 lg:col-span-3">
-          <AppButton 
-            fullWidth 
-            icon={Plus} 
-            variant="primary"
-            onClick={handleAdd}
-          >
-            Tambah Aset
-          </AppButton>
+          {canCreate && (
+            <AppButton 
+              fullWidth 
+              icon={Plus} 
+              variant="primary"
+              onClick={handleAdd}
+            >
+              Tambah Aset
+            </AppButton>
+          )}
         </div>
       </div>
 
@@ -187,8 +195,8 @@ export function AssetModule() {
           totalPages
         }}
         onPageChange={setPage}
-        onEdit={handleEdit}
-        onDelete={handleDeleteTrigger}
+        onEdit={canEdit ? handleEdit : undefined}
+        onDelete={canDelete ? handleDeleteTrigger : undefined}
       />
     </PageShell>
   )

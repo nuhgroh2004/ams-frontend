@@ -11,8 +11,13 @@ import { ConfirmActionModal } from '@/modules/users/components/modals/ConfirmAct
 import { useProcurements, useDeleteProcurement } from '../hooks/useProcurement'
 import { toast } from '@/lib/toast'
 import { Procurement } from '../types'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { hasPermissionForUser } from '@/lib/permissions'
 
 export function ProcurementModule() {
+  const currentUser = useAuthStore((state) => state.user)
+  const canCreate = hasPermissionForUser(currentUser, 'procurement:create')
+  const canDelete = hasPermissionForUser(currentUser, 'procurement:delete')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -119,16 +124,18 @@ export function ProcurementModule() {
           />
         </div>
 
-        {/* Add Button */}
+        {/* Add Button — procurement:create */}
         <div className="md:col-span-3 lg:col-span-3">
-          <AppButton 
-            fullWidth 
-            icon={Plus} 
-            variant="primary"
-            onClick={handleAdd}
-          >
-            Catat Pengadaan
-          </AppButton>
+          {canCreate && (
+            <AppButton 
+              fullWidth 
+              icon={Plus} 
+              variant="primary"
+              onClick={handleAdd}
+            >
+              Catat Pengadaan
+            </AppButton>
+          )}
         </div>
       </div>
 
@@ -144,7 +151,7 @@ export function ProcurementModule() {
         }}
         onPageChange={setPage}
         onViewDetails={handleViewDetails}
-        onDelete={handleDeleteTrigger}
+        onDelete={canDelete ? handleDeleteTrigger : undefined}
       />
     </PageShell>
   )

@@ -21,8 +21,10 @@ import {
 } from '../hooks/useAssignmentMutations'
 import { useAssets } from '@/modules/asset/hooks/useAssets'
 import { useAuth } from '@/modules/auth/hooks/useAuth'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
 import { useQuery } from '@apollo/client'
 import { GET_USERS_QUERY, GET_UNITS_QUERY } from '@/modules/users/services/user.graphql'
+import { hasPermissionForUser } from '@/lib/permissions'
 import {
   Plus,
   Eye,
@@ -51,7 +53,6 @@ import dayjs from 'dayjs'
 type FilterTab = 'all' | 'active' | 'returned'
 
 export function AssignmentModule() {
-  const { user } = useAuth()
   const [page, setPage] = useState(1)
   const [limit] = useState(10)
   const [filterTab, setFilterTab] = useState<FilterTab>('all')
@@ -100,9 +101,13 @@ export function AssignmentModule() {
     defaultValues: { asset_id: '', unit_id: '', notes: '' },
   })
 
-  const isOperator = user?.roles?.some(
-    (r: { nama_role: string }) => r.nama_role === 'ADMIN_SISTEM' || r.nama_role === 'OPERATOR_BMN'
-  )
+  const user = useAuthStore((state) => state.user)
+
+  // Per ROLE_MATRIX: Assignment Create/Return = ADMIN_SISTEM + OPERATOR_BMN only
+  // asset:create is held by ADMIN + OPERATOR; asset:edit is held by ADMIN + OPERATOR
+  // KEPALA and USER_UMUM do NOT have asset:create or asset:edit → correctly excluded
+  const canCreate = hasPermissionForUser(user, 'asset:create')
+  const canReturn = hasPermissionForUser(user, 'asset:edit')
 
   // --- Handlers ---
 
@@ -293,7 +298,7 @@ export function AssignmentModule() {
               Detail
             </AppButton>
 
-            {isOperator && !assignment.is_returned && (
+            {canReturn && !assignment.is_returned && (
               <AppButton
                 size="sm"
                 variant="outline"
@@ -341,7 +346,7 @@ export function AssignmentModule() {
             ))}
           </div>
 
-          {isOperator && (
+          {canCreate && (
             <AppButton
               variant="primary"
               icon={Plus}
