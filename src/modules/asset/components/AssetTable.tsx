@@ -61,6 +61,8 @@ export function AssetTable({
     }).format(num)
   }
 
+  const hasActions = !!onEdit || !!onDelete
+
   return (
     <div className={loading ? 'opacity-50 pointer-events-none transition-opacity' : 'transition-opacity'}>
       <AppCard className="overflow-hidden mt-5 border-border bg-card">
@@ -83,15 +85,17 @@ export function AssetTable({
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
-                  Aksi
-                </th>
+                {hasActions && (
+                  <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
+                    Aksi
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {assets.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                  <td colSpan={hasActions ? 6 : 5} className="px-6 py-12 text-center text-muted-foreground">
                     Tidak ada data aset ditemukan.
                   </td>
                 </tr>
@@ -186,26 +190,32 @@ export function AssetTable({
                       </AppBadge>
                     </td>
 
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <AppButton 
-                          size="icon_sm" 
-                          variant="ghost" 
-                          className="text-muted-foreground hover:text-foreground"
-                          onClick={() => onEdit?.(asset)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </AppButton>
-                        <AppButton 
-                          size="icon_sm" 
-                          variant="ghost" 
-                          className="text-muted-foreground hover:text-destructive"
-                          onClick={() => onDelete?.(asset.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </AppButton>
-                      </div>
-                    </td>
+                    {hasActions && (
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {onEdit && (
+                            <AppButton 
+                              size="icon_sm" 
+                              variant="ghost" 
+                              className="text-muted-foreground hover:text-foreground"
+                              onClick={() => onEdit(asset)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </AppButton>
+                          )}
+                          {onDelete && (
+                            <AppButton 
+                              size="icon_sm" 
+                              variant="ghost" 
+                              className="text-muted-foreground hover:text-destructive"
+                              onClick={() => onDelete(asset.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </AppButton>
+                          )}
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

@@ -22,4 +22,3 @@ jobs:
 
             cd ~/ams-deploy
             docker compose -p ams up -d --build
-

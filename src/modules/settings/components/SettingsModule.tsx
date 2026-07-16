@@ -1,72 +1,17 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { PageShell } from '@/components/patterns'
-import { AppButton, AppInput, AppCard, AppCardContent } from '@/components/primitives'
-import { gql, useQuery, useMutation } from '@apollo/client'
-import { toast } from '@/lib/toast'
+import { AppButton, AppCard, AppCardContent } from '@/components/primitives'
 import { Save, Settings, Mail, Percent } from 'lucide-react'
-
-const GET_SETTINGS = gql`
-  query GetSettings {
-    settings {
-      id
-      key
-      value
-      description
-    }
-  }
-`
-
-const UPDATE_SETTINGS = gql`
-  mutation UpdateSettings($input: [SettingInput!]!) {
-    updateSettings(input: $input) {
-      id
-      key
-      value
-    }
-  }
-`
+import { useSettings } from '../hooks/useSettings'
+import { GeneralSettings } from './GeneralSettings'
+import { DepreciationSettings } from './DepreciationSettings'
+import { SmtpSettings } from './SmtpSettings'
 
 export function SettingsModule() {
-  const { data, loading, refetch } = useQuery(GET_SETTINGS)
-  const [updateSettingsMutation, { loading: isSaving }] = useMutation(UPDATE_SETTINGS)
+  const { formState, loading, isSaving, handleInputChange, handleSave } = useSettings()
   const [activeTab, setActiveTab] = useState<'general' | 'depreciation' | 'smtp'>('general')
-
-  const [formState, setFormState] = useState<Record<string, { value: string; description: string }>>({})
-
-  useEffect(() => {
-    if (data?.settings) {
-      const state: Record<string, { value: string; description: string }> = {}
-      data.settings.forEach((s: any) => {
-        state[s.key] = { value: s.value, description: s.description || '' }
-      })
-      setFormState(state)
-    }
-  }, [data])
-
-  const handleInputChange = (key: string, value: string) => {
-    setFormState((prev) => ({
-      ...prev,
-      [key]: { ...prev[key], value },
-    }))
-  }
-
-  const handleSave = async () => {
-    const input = Object.entries(formState).map(([key, val]) => ({
-      key,
-      value: val.value,
-      description: val.description,
-    }))
-
-    try {
-      await updateSettingsMutation({ variables: { input } })
-      toast.success('Pengaturan berhasil diperbarui')
-      refetch()
-    } catch (err: any) {
-      toast.error('Gagal memperbarui pengaturan', err.message)
-    }
-  }
 
   if (loading) {
     return (
@@ -123,99 +68,15 @@ export function SettingsModule() {
           <AppCard>
             <AppCardContent className="p-6 space-y-6">
               {activeTab === 'general' && (
-                <div className="space-y-4">
-                  <h3 className="text-base font-semibold">Pengaturan Umum</h3>
-                  <div>
-                    <label className="text-xs font-bold text-muted-foreground uppercase mb-2 block">
-                      Nama Aplikasi
-                    </label>
-                    <AppInput
-                      value={formState['app_name']?.value || ''}
-                      onChange={(e) => handleInputChange('app_name', e.target.value)}
-                      placeholder="Masukkan nama aplikasi..."
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-muted-foreground uppercase mb-2 block">
-                      Nama Instansi / Satker
-                    </label>
-                    <AppInput
-                      value={formState['org_name']?.value || ''}
-                      onChange={(e) => handleInputChange('org_name', e.target.value)}
-                      placeholder="Masukkan nama instansi..."
-                    />
-                  </div>
-                </div>
+                <GeneralSettings formState={formState} onInputChange={handleInputChange} />
               )}
 
               {activeTab === 'depreciation' && (
-                <div className="space-y-4">
-                  <h3 className="text-base font-semibold">Metode & Parameter Penyusutan</h3>
-                  <div>
-                    <label className="text-xs font-bold text-muted-foreground uppercase mb-2 block">
-                      Metode Penyusutan Default
-                    </label>
-                    <AppInput
-                      value={formState['depreciation_method']?.value || ''}
-                      onChange={(e) => handleInputChange('depreciation_method', e.target.value)}
-                      placeholder="straight_line"
-                    />
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      Metode penyusutan aset secara global. Nilai saat ini: straight_line (Garis Lurus).
-                    </p>
-                  </div>
-                </div>
+                <DepreciationSettings formState={formState} onInputChange={handleInputChange} />
               )}
 
               {activeTab === 'smtp' && (
-                <div className="space-y-4">
-                  <h3 className="text-base font-semibold">Server SMTP untuk Notifikasi Email</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-bold text-muted-foreground uppercase mb-2 block">
-                        SMTP Host
-                      </label>
-                      <AppInput
-                        value={formState['smtp_host']?.value || ''}
-                        onChange={(e) => handleInputChange('smtp_host', e.target.value)}
-                        placeholder="smtp.example.com"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-muted-foreground uppercase mb-2 block">
-                        SMTP Port
-                      </label>
-                      <AppInput
-                        value={formState['smtp_port']?.value || ''}
-                        onChange={(e) => handleInputChange('smtp_port', e.target.value)}
-                        placeholder="587"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-bold text-muted-foreground uppercase mb-2 block">
-                        SMTP Username
-                      </label>
-                      <AppInput
-                        value={formState['smtp_user']?.value || ''}
-                        onChange={(e) => handleInputChange('smtp_user', e.target.value)}
-                        placeholder="user@example.com"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-muted-foreground uppercase mb-2 block">
-                        SMTP Password
-                      </label>
-                      <AppInput
-                        type="password"
-                        value={formState['smtp_pass']?.value || ''}
-                        onChange={(e) => handleInputChange('smtp_pass', e.target.value)}
-                        placeholder="••••••••"
-                      />
-                    </div>
-                  </div>
-                </div>
+                <SmtpSettings formState={formState} onInputChange={handleInputChange} />
               )}
 
               <div className="flex justify-end pt-4 border-t border-border">

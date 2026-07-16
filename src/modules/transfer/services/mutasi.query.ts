@@ -209,3 +209,17 @@ export const GET_MUTASI_MENUNGGU_APPROVAL = gql`
     }
   }
 `;
+
+export const GET_TRANSFER_ASSETS = gql`
+  query GetTransferAssets {
+    transferAssets {
+      id
+      kode_barang
+      nomor_register
+      nama_barang
+      kategori_id
+      kondisi
+      status_penggunaan
+    }
+  }
+`;
