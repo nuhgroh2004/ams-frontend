@@ -21,7 +21,7 @@ import {
   useSelesaikanMutasi,
   useGenerateBAST
 } from '../hooks/useMutasiMutations'
-import { useAssets } from '@/modules/asset/hooks/useAssets'
+import { GET_TRANSFER_ASSETS } from '../services/mutasi.query'
 import { useLocations } from '@/modules/locations/hooks/useLocations'
 import { useAuth } from '@/modules/auth/hooks/useAuth'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
@@ -92,7 +92,11 @@ export function MutasiModule() {
     filter: buildFilter()
   })
 
-  const { assets, loading: loadingAssets } = useAssets({ page: 1, limit: 100 })
+  const { data: transferAssetsData, loading: loadingAssets } = useQuery<{ transferAssets: any[] }>(
+    GET_TRANSFER_ASSETS,
+    { fetchPolicy: 'network-only' }
+  )
+  const assets = transferAssetsData?.transferAssets || []
   const { locations, loading: loadingLocations } = useLocations(1, 100)
   const { data: usersData, loading: loadingUsers } = useQuery(GET_USERS_QUERY, {
     variables: { page: 1, limit: 200, isActive: true }
@@ -487,7 +491,8 @@ export function MutasiModule() {
                 control={control}
                 render={({ field }) => (
                   <AppSelect
-                    {...field}
+                    value={field.value}
+                    onValueChange={field.onChange}
                     options={assetOptions}
                     placeholder="Pilih aset yang ingin dimutasi"
                     error={errors.asset_id?.message}

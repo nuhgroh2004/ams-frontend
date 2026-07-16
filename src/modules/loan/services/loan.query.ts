@@ -188,3 +188,17 @@ export const GET_PEMINJAMAN_MENUNGGU_APPROVAL = gql`
     }
   }
 `;
+
+export const GET_LOAN_AVAILABLE_ASSETS = gql`
+  query GetLoanAvailableAssets {
+    loanAvailableAssets {
+      id
+      kode_barang
+      nomor_register
+      nama_barang
+      kategori_id
+      kondisi
+      status_penggunaan
+    }
+  }
+`;

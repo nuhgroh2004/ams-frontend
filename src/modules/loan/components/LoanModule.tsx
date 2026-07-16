@@ -24,7 +24,8 @@ import {
   useKembalikanAset,
   useBatalkanPeminjaman 
 } from '../hooks/useLoanMutations'
-import { useAssets } from '@/modules/asset/hooks/useAssets'
+import { useQuery } from '@apollo/client'
+import { GET_LOAN_AVAILABLE_ASSETS } from '../services/loan.query'
 import { useAuth } from '@/modules/auth/hooks/useAuth'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
 import { hasPermissionForUser } from '@/lib/permissions'
@@ -90,7 +91,12 @@ export function LoanModule() {
     status: statusFilter
   })
 
-  const { assets, loading: loadingAssets } = useAssets({ page: 1, limit: 100 })
+  // Fetch available assets for loan
+  const { data: loanAssetsData, loading: loadingAssets } = useQuery<{ loanAvailableAssets: any[] }>(
+    GET_LOAN_AVAILABLE_ASSETS,
+    { fetchPolicy: 'network-only' }
+  )
+  const assets = loanAssetsData?.loanAvailableAssets || []
 
   // Mutations
   const { ajukan, loading: submittingAjukan } = useAjukanPeminjaman()
@@ -440,7 +446,8 @@ export function LoanModule() {
                 control={control}
                 render={({ field }) => (
                   <AppSelect
-                    {...field}
+                    value={field.value}
+                    onValueChange={field.onChange}
                     options={assetOptions}
                     placeholder="Pilih aset yang ingin dipinjam"
                     error={errors.asset_id?.message}
