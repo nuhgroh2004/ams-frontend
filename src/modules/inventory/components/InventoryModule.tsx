@@ -7,6 +7,8 @@ import { gql, useQuery, useMutation } from '@apollo/client'
 import { toast } from '@/lib/toast'
 import { Plus, Check, ClipboardList, ShieldAlert, FileText } from 'lucide-react'
 import dayjs from 'dayjs'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { hasPermissionForUser } from '@/lib/permissions'
 
 const GET_INVENTORIES = gql`
   query GetInventories($status: InventoryStatus, $page: Int, $limit: Int) {
@@ -97,6 +99,10 @@ const COMPLETE_INVENTORY = gql`
 `
 
 export function InventoryModule() {
+  const currentUser = useAuthStore((state) => state.user)
+  const canCreate   = hasPermissionForUser(currentUser, 'inventory:create')
+  const canEdit     = hasPermissionForUser(currentUser, 'inventory:edit')
+  const canSignBAST = hasPermissionForUser(currentUser, 'inventory:bast')
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('all')
   const limit = 10
@@ -269,9 +275,11 @@ export function InventoryModule() {
               ]}
             />
           </div>
-          <AppButton icon={Plus} onClick={() => setIsCreateOpen(true)}>
-            Buat Jadwal Opname
-          </AppButton>
+          {canCreate && (
+            <AppButton icon={Plus} onClick={() => setIsCreateOpen(true)}>
+              Buat Jadwal Opname
+            </AppButton>
+          )}
         </div>
 
         <DataTable
@@ -359,7 +367,7 @@ export function InventoryModule() {
                         <th className="px-4 py-3 font-semibold">Nama Aset</th>
                         <th className="px-4 py-3 font-semibold">No Reg</th>
                         <th className="px-4 py-3 font-semibold text-center">Status Checklist</th>
-                        {detailData?.inventory?.status === 'proses' && <th className="px-4 py-3 font-semibold text-right">Verifikasi</th>}
+                        {detailData?.inventory?.status === 'proses' && canEdit && <th className="px-4 py-3 font-semibold text-right">Verifikasi</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -380,7 +388,7 @@ export function InventoryModule() {
                               {d.status_fisik}
                             </span>
                           </td>
-                          {detailData?.inventory?.status === 'proses' && (
+                          {detailData?.inventory?.status === 'proses' && canEdit && (
                             <td className="px-4 py-3.5 text-right space-x-1.5">
                               <AppButton size="sm" onClick={() => handleUpdateStatusFisik(d.asset.id, 'sesuai')}>
                                 Sesuai
@@ -428,7 +436,7 @@ export function InventoryModule() {
                     >
                       Tutup
                     </AppButton>
-                    {detailData?.inventory?.status === 'proses' && (
+                    {detailData?.inventory?.status === 'proses' && canSignBAST && (
                       <AppButton onClick={() => setIsUploadOpen(true)}>
                         Selesaikan Stock Opname
                       </AppButton>

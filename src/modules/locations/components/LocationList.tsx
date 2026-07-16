@@ -7,8 +7,16 @@ import { useLocations, useCreateLocation, useUpdateLocation, useDeleteLocation }
 import { locationMapper } from '../mappers/location.mapper';
 import { Location, LocationFormValues } from '../types';
 import { PageShell } from '@/components/patterns';
+import { useAuthStore } from '@/modules/auth/store/auth.store';
+import { hasPermissionForUser } from '@/lib/permissions';
 
 export const LocationList = () => {
+  const currentUser = useAuthStore((state) => state.user)
+  // Per ROLE_MATRIX: Location CRUD = ADMIN_SISTEM only; others are read-only
+  const canCreate = hasPermissionForUser(currentUser, 'location:create')
+  const canEdit   = hasPermissionForUser(currentUser, 'location:edit')
+  const canDelete = hasPermissionForUser(currentUser, 'location:delete')
+
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -70,9 +78,9 @@ export const LocationList = () => {
         <LocationTable
           data={locations}
           loading={listLoading}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onAdd={handleCreate}
+          onEdit={canEdit ? handleEdit : undefined}
+          onDelete={canDelete ? handleDelete : undefined}
+          onAdd={canCreate ? handleCreate : undefined}
         />
 
         <LocationFormModal

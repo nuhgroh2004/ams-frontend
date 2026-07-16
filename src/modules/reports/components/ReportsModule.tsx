@@ -6,6 +6,8 @@ import { AppButton, AppCard, AppCardContent, AppInput, AppSelect } from '@/compo
 import { gql, useQuery, useLazyQuery } from '@apollo/client'
 import { toast } from '@/lib/toast'
 import { Download, FileSpreadsheet, Layers, Settings, Wrench } from 'lucide-react'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { hasPermissionForUser } from '@/lib/permissions'
 
 const GET_FILTER_DATA = gql`
   query GetFilterData {
@@ -39,6 +41,11 @@ const GENERATE_MAINTENANCE_REPORT = gql`
 `
 
 export function ReportsModule() {
+  const currentUser = useAuthStore((state) => state.user)
+  // Per ROLE_MATRIX: Depreciation report = ADMIN_SISTEM + OPERATOR_BMN only (financial data)
+  // KEPALA_UNIT_KERJA can export asset + maintenance reports but NOT depreciation
+  const canExportDepreciation = hasPermissionForUser(currentUser, 'report:depreciation')
+
   const { data: filterData } = useQuery(GET_FILTER_DATA)
 
   // Filters State for Asset Report
@@ -235,7 +242,8 @@ export function ReportsModule() {
         </AppCard>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Depreciation Report */}
+        {/* Depreciation Report — ADMIN_SISTEM + OPERATOR_BMN only */}
+          {canExportDepreciation && (
           <AppCard>
             <AppCardContent className="p-6 space-y-6 flex flex-col justify-between h-full">
               <div className="space-y-4">
@@ -262,6 +270,7 @@ export function ReportsModule() {
               </div>
             </AppCardContent>
           </AppCard>
+          )}
 
           {/* Maintenance Report */}
           <AppCard>

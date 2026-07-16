@@ -9,6 +9,8 @@ import {
   AppBadge
 } from '@/components/primitives'
 import { useAuth } from '@/modules/auth/hooks/useAuth'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { hasPermissionForUser } from '@/lib/permissions'
 import { useQuery } from '@apollo/client'
 import { GET_DASHBOARD_OVERVIEW } from '../services/dashboard.query'
 import { DashboardOverview } from '../types'
@@ -30,13 +32,10 @@ import Link from 'next/link'
 
 export function DashboardModule() {
   const { user } = useAuth()
+  const currentUser = useAuthStore((state) => state.user)
 
-  const isManagement = user?.roles?.some(
-    (r: any) =>
-      r.nama_role === 'ADMIN_SISTEM' ||
-      r.nama_role === 'OPERATOR_BMN' ||
-      r.nama_role === 'KEPALA_UNIT_KERJA'
-  )
+  // Show management dashboard (analytics) to users with report:view permission
+  const isManagement = hasPermissionForUser(currentUser, 'report:view')
 
   const { data, loading, error } = useQuery<{ dashboardOverview: DashboardOverview }>(
     GET_DASHBOARD_OVERVIEW,

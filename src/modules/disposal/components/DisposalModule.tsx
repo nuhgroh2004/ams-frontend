@@ -7,6 +7,8 @@ import { gql, useQuery, useMutation } from '@apollo/client'
 import { toast } from '@/lib/toast'
 import { Plus, Eye, ShieldAlert, FileText, CheckCircle2, XCircle, HelpCircle } from 'lucide-react'
 import dayjs from 'dayjs'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { hasPermissionForUser } from '@/lib/permissions'
 
 const GET_DISPOSALS = gql`
   query GetDisposals($status: String, $page: Int, $limit: Int) {
@@ -38,6 +40,9 @@ const GET_DISPOSALS = gql`
             approved_at
             step {
               nama_step
+              role {
+                nama_role
+              }
             }
             approver {
               nama_lengkap
@@ -70,6 +75,8 @@ const AJUKAN_DISPOSAL = gql`
 `
 
 export function DisposalModule() {
+  const currentUser = useAuthStore((state) => state.user)
+  const canCreate = hasPermissionForUser(currentUser, 'disposal:create')
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('all')
   const limit = 10
@@ -193,9 +200,11 @@ export function DisposalModule() {
               ]}
             />
           </div>
-          <AppButton icon={Plus} onClick={() => setIsSubmitOpen(true)}>
-            Ajukan Penghapusan
-          </AppButton>
+          {canCreate && (
+            <AppButton icon={Plus} onClick={() => setIsSubmitOpen(true)}>
+              Ajukan Penghapusan
+            </AppButton>
+          )}
         </div>
 
         <DataTable
@@ -305,7 +314,9 @@ export function DisposalModule() {
                     <div key={app.id} className={`flex items-start gap-3 p-3 rounded-xl border ${color}`}>
                       <Icon className="h-5 w-5 flex-shrink-0 mt-0.5" />
                       <div className="space-y-1">
-                        <p className="font-semibold text-sm">{app.step.nama_step}</p>
+                        <p className="font-semibold text-sm">
+                          {app.step.nama_step} {app.step.role?.nama_role && `(${app.step.role.nama_role})`}
+                        </p>
                         <p className="text-xs">
                           Status: <strong className="uppercase">{app.status}</strong> 
                           {app.approver?.nama_lengkap && ` oleh ${app.approver.nama_lengkap}`}
