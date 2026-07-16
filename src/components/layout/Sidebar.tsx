@@ -29,8 +29,24 @@ import { useAuthStore } from '@/modules/auth/store/auth.store'
 import { useLayoutStore } from '@/lib/store/layout.store'
 import { useAppLogout } from '@/modules/auth/hooks/useAppLogout'
 import { Loader2 } from 'lucide-react'
+import { hasPermissionForUser } from '@/lib/permissions'
 
-const NAV_GROUPS = [
+type NavItem = {
+  label: string
+  href: string
+  icon: React.ElementType
+  permission?: string
+}
+
+type NavGroup = {
+  label: string
+  items: NavItem[]
+}
+
+// NAV_GROUPS is defined as a constant (no permissions computed here).
+// Permission filtering happens INSIDE the component during render,
+// using the reactive user from useAuthStore((state) => state.user).
+const NAV_GROUPS: NavGroup[] = [
   {
     label: '',
     items: [
@@ -48,21 +64,31 @@ const NAV_GROUPS = [
         label: 'Manajemen Aset',
         href: '/dashboard/assets',
         icon: Database,
+        permission: 'asset:view',
       },
       {
         label: 'Lokasi',
         href: '/dashboard/locations',
         icon: MapPin,
+        permission: 'location:view',
       },
       {
         label: 'Unit Kerja',
         href: '/dashboard/unit-kerja',
         icon: Building2,
+        permission: 'unit:view',
       },
       {
         label: 'User & Role',
         href: '/dashboard/users',
         icon: UsersRound,
+        permission: 'user:view',
+      },
+      {
+        label: 'Matriks Peran',
+        href: '/dashboard/role-matrix',
+        icon: ShieldCheck,
+        permission: 'user:view', // Visible to anyone who can view users
       },
     ],
   },
@@ -73,6 +99,7 @@ const NAV_GROUPS = [
         label: 'Pengadaan Aset',
         href: '/dashboard/procurement',
         icon: ShoppingCart,
+        permission: 'procurement:view',
       },
     ],
   },
@@ -83,16 +110,19 @@ const NAV_GROUPS = [
         label: 'Assignment',
         href: '/dashboard/assignment',
         icon: ClipboardCheck,
+        permission: 'asset:view',
       },
       {
         label: 'Mutasi',
         href: '/dashboard/mutasi',
         icon: ArrowRightLeft,
+        permission: 'transfer:view',
       },
       {
         label: 'Peminjaman',
         href: '/dashboard/peminjaman',
         icon: Handshake,
+        permission: 'loan:view',
       },
     ],
   },
@@ -103,21 +133,25 @@ const NAV_GROUPS = [
         label: 'Perawatan',
         href: '/dashboard/perawatan',
         icon: Wrench,
+        permission: 'maintenance:view',
       },
       {
         label: 'Inventarisasi',
         href: '/dashboard/inventarisasi',
         icon: ClipboardList,
+        permission: 'inventory:view',
       },
       {
         label: 'Penghapusan',
         href: '/dashboard/penghapusan',
         icon: Trash2,
+        permission: 'disposal:view',
       },
       {
         label: 'Laporan Kehilangan',
         href: '/dashboard/laporan-kehilangan',
         icon: TriangleAlert,
+        permission: 'loss:view',
       },
     ],
   },
@@ -128,21 +162,25 @@ const NAV_GROUPS = [
         label: 'Laporan',
         href: '/dashboard/reports',
         icon: FileText,
+        permission: 'report:view',
       },
       {
         label: 'Audit Log',
         href: '/dashboard/audit-log',
         icon: ShieldCheck,
+        permission: 'audit:view',
       },
       {
         label: 'Approval Workflow',
         href: '/dashboard/approval-workflow',
         icon: CheckSquare,
+        permission: 'workflow:view',
       },
       {
         label: 'Settings',
         href: '/dashboard/settings',
         icon: Settings,
+        permission: 'settings:view',
       }
     ],
   },
@@ -150,7 +188,7 @@ const NAV_GROUPS = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { user } = useAuthStore()
+  const user = useAuthStore((state) => state.user)
   const { handleLogout, isLoggingOut } = useAppLogout()
   const { isSidebarOpen, setSidebarOpen } = useLayoutStore()
 
@@ -229,40 +267,50 @@ export function Sidebar() {
           {/* Navigation Area */}
           <nav className="flex-1 overflow-y-auto px-4 pb-6 custom-scrollbar">
             <div className="space-y-6">
-              {NAV_GROUPS.map((group) => (
-                <div key={group.label} className="space-y-2">
-                  {group.label && (
-                    <h3 className="px-3 text-[10px] font-bold text-muted-foreground tracking-[0.2em] uppercase">
-                      {group.label}
-                    </h3>
-                  )}
-                  <div className="space-y-1">
-                    {group.items.map((item) => {
-                      const isActive = pathname === item.href
-                      const Icon = item.icon
+              {NAV_GROUPS.map((group) => {
+                // Filter during render using reactive user — this re-runs on every user state change
+                const visibleItems = group.items.filter((item) => {
+                  if (!item.permission) return true
+                  return hasPermissionForUser(user, item.permission)
+                })
 
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          className={cn(
-                            'flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-all duration-200 rounded-xl group',
-                            isActive 
-                              ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20' 
-                              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                          )}
-                        >
-                          <Icon className={cn(
-                            'h-4 w-4 shrink-0',
-                            isActive ? 'text-primary-foreground' : 'group-hover:text-foreground'
-                          )} />
-                          <span className="truncate">{item.label}</span>
-                        </Link>
-                      )
-                    })}
+                if (visibleItems.length === 0) return null
+
+                return (
+                  <div key={group.label} className="space-y-2">
+                    {group.label && (
+                      <h3 className="px-3 text-[10px] font-bold text-muted-foreground tracking-[0.2em] uppercase">
+                        {group.label}
+                      </h3>
+                    )}
+                    <div className="space-y-1">
+                      {visibleItems.map((item) => {
+                        const isActive = pathname === item.href
+                        const Icon = item.icon
+
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className={cn(
+                              'flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-all duration-200 rounded-xl group',
+                              isActive 
+                                ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20' 
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                            )}
+                          >
+                            <Icon className={cn(
+                              'h-4 w-4 shrink-0',
+                              isActive ? 'text-primary-foreground' : 'group-hover:text-foreground'
+                            )} />
+                            <span className="truncate">{item.label}</span>
+                          </Link>
+                        )
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </nav>
 
